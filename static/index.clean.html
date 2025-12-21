@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>Viral Cloner V2</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=SUIT:wght@400;500;600;700&display=swap");
+    :root {
+      --bg-1: #f7f8fb;
+      --bg-2: #eef2ff;
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --text: #0f172a;
+      --muted: #4b5563;
+      --accent: #111827;
+      --accent-2: #2563eb;
+      --accent-soft: rgba(37, 99, 235, 0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "SUIT", "Space Grotesk", "Pretendard", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      background: radial-gradient(circle at 20% 20%, rgba(79,70,229,0.06), transparent 32%), radial-gradient(circle at 82% -4%, rgba(16,185,129,0.06), transparent 26%), linear-gradient(180deg, var(--bg-1), var(--bg-2));
+      color: var(--text);
+      min-height: 100vh;
+    }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(10px);
+      background: rgba(247,248,251,0.9);
+      border-bottom: 1px solid var(--border);
+    }
+    .topbar {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 14px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    .title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      font-size: 20px;
+      letter-spacing: -0.01em;
+    }
+    .subtitle { color: #cbd5e1; font-size: 13px; }
+    .layout {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 24px 24px 48px 24px;
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 16px 36px rgba(15,23,42,0.08);
+      padding: 18px;
+    }
+    .hero-card {
+      background: linear-gradient(135deg, #0f172a, #0b1224, #111827);
+      color: #f8fafc;
+      border: 1px solid rgba(255,255,255,0.1);
+      box-shadow: 0 24px 70px rgba(0,0,0,0.35);
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 13px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      color: #e5e7eb;
+      font-size: 12px;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      border: 1px solid rgba(255,255,255,0.14);
+    }
+    h1 { margin: 8px 0 6px 0; font-size: 30px; font-weight: 800; letter-spacing: -0.01em; color: #f8fafc; }
+    h2 { margin: 0 0 10px 0; font-size: 18px; color: var(--text); }
+    label { font-size: 13px; color: var(--muted); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+    input, button, textarea { font: inherit; }
+    input[type="text"], input[type="password"] {
+      width: 100%;
+      height: 46px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 0 14px;
+      background: #f9fafb;
+      transition: border 0.15s ease, box-shadow 0.15s ease;
+      font-size: 15px;
+    }
+    input:focus { outline: none; border-color: #9ca3af; box-shadow: 0 8px 18px rgba(17,24,39,0.08); }
+    button {
+      width: 100%;
+      height: 46px;
+      border-radius: 12px;
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+      letter-spacing: 0.01em;
+      font-size: 15px;
+    }
+    button.secondary {
+      background: var(--card);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    button:disabled { background: #d1d5db; border-color: #d1d5db; color: #9ca3af; cursor: not-allowed; }
+    button:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 12px 28px rgba(17,24,39,0.18); }
+    .stack { display: flex; flex-direction: column; gap: 14px; }
+    .row { display: flex; gap: 10px; align-items: center; }
+    .muted { color: var(--muted); }
+    .divider { height: 1px; background: var(--border); margin: 6px 0; }
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin-top: 10px;
+    }
+    .card {
+      background: #f9fafb;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+    .card strong { display: block; font-size: 28px; }
+    .chip-wrap { display: flex; flex-wrap: wrap; gap: 8px; min-height: 26px; }
+    .chip {
+      padding: 6px 11px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 12px;
+      border: 1px solid rgba(37,99,235,0.16);
+    }
+    .timeline-item {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      background: linear-gradient(135deg, #ffffff, #f7f9ff);
+      margin-bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      border-left: 4px solid #2563eb;
+      box-shadow: 0 10px 28px rgba(37,99,235,0.06);
+    }
+    .pattern-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .timeline-title { font-weight: 800; font-size: 16px; color: var(--text); }
+    .timeline-formula { color: var(--muted); line-height: 1.55; font-size: 15px; }
+    .intent-badge {
+      color: #3730a3;
+      font-weight: 800;
+      font-size: 13px;
+      background: rgba(67,56,202,0.12);
+      border: 1px solid rgba(67,56,202,0.2);
+      border-radius: 999px;
+      padding: 6px 12px;
+    }
+    .time-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 10px;
+      background: rgba(37,99,235,0.12);
+      color: #1d4ed8;
+      font-weight: 800;
+      font-size: 13px;
+    }
+    .phase-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 10px;
+      background: rgba(17,24,39,0.06);
+      color: #0f172a;
+      font-weight: 700;
+      font-size: 12px;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+    .script-box {
+      background: #0f172a;
+      color: #e5e7eb;
+      border-radius: 14px;
+      border: 1px solid #1f2937;
+      padding: 18px;
+      min-height: 160px;
+      max-height: 520px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: "Cascadia Code", "SFMono-Regular", monospace;
+      line-height: 1.65;
+    }
+    .title-list { display: flex; flex-direction: column; gap: 8px; }
+    .title-pill {
+      background: #f9fafb;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-weight: 700;
+      color: var(--text);
+      box-shadow: 0 6px 16px rgba(15,23,42,0.06);
+    }
+    a { color: #2563eb; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .step-tag { font-size: 12px; font-weight: 800; color: var(--accent-2); text-transform: uppercase; letter-spacing: 0.06em; }
+    .floating-status { font-size: 12px; color: var(--muted); min-height: 18px; margin-top: 4px; }
+    .eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); font-weight: 700; }
+    .workflow-panel { position: sticky; top: 96px; display: flex; flex-direction: column; gap: 12px; }
+    .step-head { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 14px; }
+    .help {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 11px;
+      position: relative;
+      cursor: default;
+      background: #f3f4f6;
+    }
+    .help:hover::after {
+      content: attr(data-tip);
+      position: absolute;
+      top: 22px;
+      left: 0;
+      transform: translateX(-10%);
+      background: #0f172a;
+      color: #e5e7eb;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #1f2937;
+      font-size: 12px;
+      width: max(220px, 40vw);
+      max-width: 360px;
+      z-index: 60;
+      box-shadow: 0 16px 32px rgba(0,0,0,0.18);
+      white-space: normal;
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(37,99,235,0.08);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      border: 1px solid rgba(37,99,235,0.14);
+    }
+    .status-badge.info { background: rgba(37,99,235,0.08); border-color: rgba(37,99,235,0.14); color: #1d4ed8; }
+    .status-badge.warn { background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.18); color: #b45309; }
+    .status-badge.error { background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.16); color: #b91c1c; }
+    .status-badge.hero { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.16); color: #e5e7eb; }
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(37,99,235,0.2);
+      border-top-color: #2563eb;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    .status-badge.hero .spinner {
+      border: 2px solid rgba(255,255,255,0.2);
+      border-top-color: #ffffff;
+    }
+    .status-badge.hero .status-text { color: #e5e7eb; }
+    .skeleton {
+      height: 14px;
+      border-radius: 6px;
+      background: linear-gradient(90deg, #e5e7eb, #f3f4f6, #e5e7eb);
+      background-size: 200% 100%;
+      animation: shimmer 1.3s linear infinite;
+    }
+    .loading-dot::after { content: "..."; animation: blink 1s steps(1,end) infinite; }
+    @keyframes blink { 0%, 20% { color: transparent; } 50% { color: currentColor; } 100% { color: currentColor; } }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+    }
+    .modal {
+      background: var(--card);
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      padding: 18px;
+      width: min(480px, 92vw);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+    }
+    @media (max-width: 1080px) {
+      .layout { grid-template-columns: 1fr; }
+      .workflow-panel { position: static; }
+    }
+    @media (max-width: 640px) {
+      .topbar { flex-direction: column; align-items: flex-start; }
+      h1 { font-size: 26px; }
+      .layout { padding: 18px 16px 36px 16px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="topbar">
+      <div>
+        <div class="title">YouTube Pattern Benchmark</div>
+        <div class="subtitle">?ìƒ êµ¬ì¡°ë¥?ë²¤ì¹˜ë§ˆí‚¹??ë°”ì´???¤í¬ë¦½íŠ¸ë¥??ë™ ?¤ê³„?©ë‹ˆ??</div>
+      </div>
+      <div class="row" style="gap:8px;">
+        <button class="secondary" id="openSettings" style="width:auto;padding:0 16px;height:40px;border-radius:999px;">?™ï¸ ?¤ì •</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <div class="workflow-panel">
+      <div class="panel">
+        <div class="eyebrow">Workflow</div>
+        <h2 style="margin:6px 0 4px 0;">ë¶„ì„ ??ê¸°íš ???‘ì„± ?ë¦„ ?œëˆˆ??/h2>
+        <div class="muted" style="font-size:13px;">URL??ë¶„ì„???¨í„´??ì¶”ì¶œ?˜ê³ , ? íƒ??ì£¼ì œë¡?ë°”ë¡œ ?¤í¬ë¦½íŠ¸ë¥??ì„±?©ë‹ˆ??</div>
+      </div>
+      <div class="panel">
+        <div class="stack">
+          <div>
+            <div class="step-head"><span class="step-tag">Step 1</span><span>?ìƒ êµ¬ì¡° ë¶„ì„</span></div>
+            <label>ë¶„ì„???ìƒ URL
+              <span class="help" data-tip="? íŠœë¸??ìƒ URL???…ë ¥?˜ë©´ ?ë§‰/ê¸¸ì´ë¥?ê¸°ë°˜?¼ë¡œ êµ¬ì¡° ?¨í„´??ì¶”ì¶œ?©ë‹ˆ??">?</span>
+            </label>
+            <input id="url" type="text" placeholder="https://www.youtube.com/watch?v=..." />
+            <div class="floating-status" id="statusAnalyze"></div>
+            <button id="analyze">?¨í„´ ë¶„ì„ (ì²?¬ ì¶”ì¶œ)</button>
+          </div>
+          <div class="divider"></div>
+          <div>
+            <div class="step-head"><span class="step-tag">Step 2</span><span>ì£¼ì œ/?œí’ˆ ë¬¸êµ¬ ?¤ì •</span></div>
+            <label>?€ê²?? í”½
+              <span class="help" data-tip="ì£¼ì œ/?œí’ˆ/?˜ê²½???…ë ¥?˜ë©´ ë¶„ì„??êµ¬ì¡°ë¥?ê¸°ë°˜?¼ë¡œ ë°”ì´??ë¬¸êµ¬ë¥?ë§Œë“­?ˆë‹¤. ?? 'AI ?ì–´ì½”ì¹­ SaaS', '? ì œ???°ì¹­ 1ë¶??°ì?'.">?</span>
+            </label>
+            <input id="topic" type="text" placeholder="?? AI ?ì–´ì½”ì¹­ SaaS, 1ë¶??°ì?" disabled />
+            <div class="floating-status" id="statusGenerate"></div>
+            <button id="generate" disabled>?¤í¬ë¦½íŠ¸ ?ì„±</button>
+          </div>
+          <div class="divider"></div>
+          <div class="muted" style="font-size:12px; line-height:1.5;">
+            Viral Score ê¸°ì?: ?„í‚¹ ê°•ë„, ?ë¦„ ?„í™˜, ?¤í† ë¦??œí¬, CTA ëª…í™•?±ì„ 0~100?¼ë¡œ ?•ê·œ?”í•œ ê°’ì…?ˆë‹¤.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stack" style="gap:16px;">
+      <div class="panel hero-card">
+        <span class="pill">YouTube êµ¬ì¡° ë¶„ì„ Â· ?¤í¬ë¦½íŠ¸ ?ë™??/span>
+        <h1>YouTube Pattern Benchmark</h1>
+        <div class="muted" style="color: rgba(229,231,235,0.86);">
+          ?ìœ„ ?ìƒ êµ¬ì¡°ë¥?ë²¤ì¹˜ë§ˆí‚¹?˜ê³ , ?™ì¼???¤Â·í…œ?¬ë¡œ ë°”ì´???•ë¥ ???’ì´???¤í¬ë¦½íŠ¸ë¥?ë§Œë“­?ˆë‹¤.
+        </div>
+        <div class="row" style="margin-top:10px; gap:8px;">
+          <div id="globalStatus" class="status-badge hero">
+            <div class="spinner" id="statusSpinner"></div>
+            <div class="status-text">?€ê¸?ì¤‘ì…?ˆë‹¤.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="row" style="align-items:center; justify-content:space-between; gap:12px;">
+          <div>
+            <div class="step-tag">Result Â· Structure Map</div>
+            <h2 style="margin:4px 0 0 0;">ë°”ì´??êµ¬ì¡° ?¤ëƒ…??/h2>
+          </div>
+          <div class="muted" style="font-size:12px;">ë¶„ì„ ?„ë£Œ ??ì¦‰ì‹œ ê°±ì‹ </div>
+        </div>
+        <div class="card-grid">
+          <div class="card">
+            <div class="muted" style="font-size:13px;">Viral Score</div>
+            <strong id="score">-</strong>
+          </div>
+          <div class="card">
+            <div class="muted" style="font-size:13px;">Keywords</div>
+            <div id="keywords" class="chip-wrap">-</div>
+          </div>
+          <div class="card">
+            <div class="muted" style="font-size:13px;">One-line Summary</div>
+            <div id="summary" class="muted">-</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="row" style="align-items:center; justify-content:space-between;">
+          <div>
+            <div class="step-tag">Result Â· Pattern</div>
+            <h2 style="margin:4px 0 0 0;">?¨í„´ êµ¬ì¡° ë¶„ì„ ê²°ê³¼</h2>
+            <div class="muted" style="font-size:12px;">?ìƒ?ì„œ ì¶”ì¶œ???œê°„?€ë³??„í‚¹Â·?„í™˜Â·CTA ?¨í„´?…ë‹ˆ??</div>
+          </div>
+        </div>
+        <div id="timeline"></div>
+      </div>
+
+      <div class="panel">
+        <div class="row" style="align-items:center; justify-content:space-between;">
+          <div>
+            <div class="step-tag">Result Â· Titles</div>
+            <h2 style="margin:4px 0 0 0;">ì¶”ì²œ ?œëª© (3??</h2>
+            <div class="muted" style="font-size:12px;">?¨í„´??ë°˜ì˜???¸ë„¤???ìƒ ?œëª© ?„ë³´?…ë‹ˆ??</div>
+          </div>
+        </div>
+        <div id="titles" class="title-list">
+          <div class="title-pill">-</div>
+        </div>
+      </div>
+
+      <div class="panel" style="display:flex; flex-direction:column; gap:10px;">
+        <div class="row" style="align-items:center; justify-content:space-between;">
+          <div>
+            <div class="step-tag">Result Â· Script</div>
+            <h2 style="margin:4px 0 0 0;">?¨í„´ êµ¬ì¡° ë°˜ì˜ ?¤í¬ë¦½íŠ¸</h2>
+          </div>
+        </div>
+        <div id="script" class="script-box" style="margin-top:4px;">?¤í¬ë¦½íŠ¸ê°€ ?¬ê¸°???œì‹œ?©ë‹ˆ??</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal">
+      <h2 style="margin:0 0 8px 0;">?¤ì •</h2>
+      <div class="muted" style="font-size:12px;">API ?¤ë? ?…ë ¥?˜ê³  ?€?¥í•˜ê±°ë‚˜, ?„ìš” ??ì¦‰ì‹œ ?ìš©?˜ì„¸?? ë°œê¸‰ ê°€?´ë“œ: <a href="https://youtu.be/CefySq5RZNo" target="_blank">YouTube ?œí† ë¦¬ì–¼</a></div>
+      <div class="stack" style="margin-top:12px;">
+        <div>
+          <label>Google API Key</label>
+          <input id="key" type="password" placeholder="Gemini API ?? />
+        </div>
+        <div class="row">
+          <button id="saveKey">ë¡œì»¬ ?€??.env)</button>
+          <button id="applyKey" class="secondary">?¸ì…˜ ?ìš©</button>
+        </div>
+        <div id="statusKey" class="muted" style="min-height:18px;font-size:12px;"></div>
+        <div class="row" style="justify-content:flex-end;">
+          <button id="closeSettings" class="secondary" style="width:auto;padding:0 14px;">?«ê¸°</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const state = { analysis: null, apiKey: "", topic: "" };
+    const el = (id) => document.getElementById(id);
+    const setStatus = (id, msg) => { const node = el(id); if (node) node.innerText = msg || ""; };
+    const setGlobalStatus = (msg, tone = "info", loading = false) => {
+      const badge = el("globalStatus");
+      const text = badge?.querySelector(".status-text");
+      const spinner = el("statusSpinner");
+      if (!badge || !text) return;
+      badge.className = `status-badge ${tone} hero`;
+      text.innerText = msg;
+      if (spinner) spinner.style.display = loading ? "inline-block" : "none";
+    };
+    const setLoadingView = (scope, msg) => {
+      if (scope === "timeline") {
+        el("timeline").innerHTML = `<div class="muted skeleton" style="width:50%;height:16px;"></div><div style="height:8px;"></div><div class="muted">${msg}</div>`;
+      }
+      if (scope === "script") {
+        el("script").innerText = msg;
+      }
+    };
+
+    const backdrop = el("modalBackdrop");
+    const openSettings = () => { backdrop.style.display = "flex"; };
+    const closeSettings = () => { backdrop.style.display = "none"; };
+    el("openSettings").onclick = openSettings;
+    el("closeSettings").onclick = closeSettings;
+
+    async function postJSON(url, body) {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        let detail = await res.text();
+        try { const j = JSON.parse(detail); detail = j.detail || detail; } catch (_) {}
+        throw new Error(detail || res.statusText);
+      }
+      return res.json();
+    }
+
+    function loadStoredKey() {
+      const stored = localStorage.getItem("vc_api_key");
+      if (stored) {
+        state.apiKey = stored;
+        const keyInput = el("key");
+        if (keyInput) keyInput.value = stored;
+        setStatus("statusKey", "ë¡œì»¬ ?€?¥ëœ ?¤ë? ë¶ˆëŸ¬?”ìŠµ?ˆë‹¤.");
+      }
+    }
+
+    function buildTitleCandidates(topic, data) {
+      const safeTopic = topic && topic.trim() ? topic.trim() : "? ??";
+      const summaryRaw = data.one_line_summary || "?? ?? ??";
+      const summary = summaryRaw.length > 42 ? summaryRaw.slice(0, 42).trim() + "..." : summaryRaw;
+      const kwList = (data.keywords || []).slice(0, 3);
+      const kw = kwList.length ? "#" + kwList.join(" #") : "";
+      const hook = (data.timeline && data.timeline[0]?.intent) || "?? ??";
+      return [
+        `${safeTopic} ??, ??? ??? ${hook}! (${summary})`,
+        `??? ????? ${safeTopic} ????? ${summary}`,
+        `${kw ? kw + " | " : ""}${safeTopic} ??? ?? | ${summary} (??? ?? ??)`,
+      ];
+    }
+
+    function renderTitles(list) {
+      const titlesWrap = el("titles");
+      titlesWrap.innerHTML = "";
+      list.slice(0, 3).forEach((t) => {
+        const div = document.createElement("div");
+        div.className = "title-pill";
+        div.innerText = t;
+        titlesWrap.appendChild(div);
+      });
+    }
+
+    function renderTitlePlaceholder() {
+      renderTitles(["?¤í¬ë¦½íŠ¸ ?ì„± ??ì¶”ì²œ ?œëª©???œì‹œ?©ë‹ˆ??"]);
+    }
+
+    el("analyze").onclick = async () => {
+      const key = state.apiKey || el("key").value.trim();
+      const url = el("url").value.trim();
+      if (!key) { setStatus("statusAnalyze", "API ?¤ë? ?¤ì • ì°½ì—???…ë ¥?´ì£¼?¸ìš”."); return; }
+      if (!url) { setStatus("statusAnalyze", "URL???…ë ¥?´ì£¼?¸ìš”."); return; }
+      setStatus("statusAnalyze", "ë¶„ì„ ì¤‘ì…?ˆë‹¤"); el("analyze").disabled = true; el("analyze").classList.add("loading-dot");
+      setGlobalStatus("ë¶„ì„ ì¤?.. ?¨í„´??ì¶”ì¶œ?˜ê³  ?ˆìŠµ?ˆë‹¤.", "info", true);
+      setLoadingView("timeline", "?¨í„´ êµ¬ì¡°ë¥?ì¶”ì¶œ?˜ëŠ” ì¤‘ì…?ˆë‹¤...");
+      setLoadingView("script", "ë¶„ì„ ?„ë£Œ ???¤í¬ë¦½íŠ¸ ?ì„±???¤í–‰?˜ì„¸??");
+      try {
+        const data = await postJSON("/api/analyze", { api_key: key, url });
+        renderBlueprint(data);
+        state.analysis = data;
+        el("topic").disabled = false;
+        el("generate").disabled = false;
+        setStatus("statusAnalyze", "ë¶„ì„ ?„ë£Œ!");
+        setGlobalStatus("ë¶„ì„ ?„ë£Œ. ì£¼ì œë¥??…ë ¥?˜ë©´ ?¤í¬ë¦½íŠ¸ë¥??ì„±?©ë‹ˆ??", "info", false);
+      } catch (e) {
+        console.error(e);
+        setStatus("statusAnalyze", "ë¶„ì„ ?¤íŒ¨: " + e.message);
+        setGlobalStatus("ë¶„ì„ ?¤íŒ¨: " + e.message, "error", false);
+      } finally {
+        el("analyze").disabled = false;
+        el("analyze").classList.remove("loading-dot");
+      }
+    };
+
+    el("generate").onclick = async () => {
+      if (!state.analysis) { setStatus("statusGenerate", "ë¨¼ì? ë¶„ì„???¤í–‰?´ì£¼?¸ìš”."); return; }
+      const topic = el("topic").value.trim();
+      if (!topic) { setStatus("statusGenerate", "ì£¼ì œë¥??…ë ¥?´ì£¼?¸ìš”."); return; }
+      state.topic = topic;
+      const key = state.apiKey || el("key").value.trim();
+      setStatus("statusGenerate", "?¤í¬ë¦½íŠ¸ ?ì„± ì¤‘ì…?ˆë‹¤"); el("generate").disabled = true; el("generate").classList.add("loading-dot");
+      setGlobalStatus("?¤í¬ë¦½íŠ¸ ?ì„± ì¤?.. ?”ì²­??ë³´ë‚´ê³??ˆìŠµ?ˆë‹¤.", "info", true);
+      setLoadingView("script", "?¤í¬ë¦½íŠ¸ë¥??ì„±?˜ëŠ” ì¤‘ì…?ˆë‹¤...");
+      try {
+        const { script, titles } = await postJSON("/api/generate", {
+          api_key: key,
+          topic,
+          analysis: state.analysis,
+        });
+        el("script").innerText = script;
+        if (titles && titles.length) {
+          renderTitles(titles);
+        } else if (state.analysis) {
+          renderTitles(buildTitleCandidates(topic, state.analysis));
+        }
+        setStatus("statusGenerate", "?¤í¬ë¦½íŠ¸ ?ì„± ?„ë£Œ!");
+        setGlobalStatus("?¤í¬ë¦½íŠ¸ ?ì„± ?„ë£Œ!", "info", false);
+      } catch (e) {
+        console.error(e);
+        setStatus("statusGenerate", "?ì„± ?¤íŒ¨: " + e.message);
+        setGlobalStatus("?ì„± ?¤íŒ¨: " + e.message, "error", false);
+      } finally {
+        el("generate").disabled = false;
+        el("generate").classList.remove("loading-dot");
+      }
+    };
+
+    function renderBlueprint(data) {
+      el("score").innerText = data.viral_score ?? "-";
+      const kwWrap = el("keywords");
+      kwWrap.innerHTML = "";
+      (data.keywords || []).forEach((k) => {
+        const div = document.createElement("div");
+        div.className = "chip";
+        div.innerText = k;
+        kwWrap.appendChild(div);
+      });
+      if (!data.keywords || !data.keywords.length) kwWrap.innerText = "?¤ì›Œ???†ìŒ";
+      el("summary").innerText = data.one_line_summary || "-";
+
+      const tWrap = el("timeline");
+      tWrap.innerHTML = "";
+      (data.timeline || []).forEach((item) => {
+        const box = document.createElement("div");
+        box.className = "timeline-item";
+        box.innerHTML = `
+          <div class="pattern-head">
+            <div class="row" style="align-items:center; gap:8px;">
+              <span class="time-chip">${item.time || ""}</span>
+              <span class="phase-label">${item.phase || ""}</span>
+            </div>
+            <span class="intent-badge">${item.intent || ""}</span>
+          </div>
+          <div class="timeline-formula">${item.formula || ""}</div>
+        `;
+        tWrap.appendChild(box);
+      });
+      if (!data.timeline || !data.timeline.length) {
+        tWrap.innerHTML = `<div class="muted">?¨í„´ ?°ì´?°ê? ?†ìŠµ?ˆë‹¤.</div>`;
+      }
+
+      // ?œëª©?€ ?¤í¬ë¦½íŠ¸ ?ì„± ?œì—ë§??œì‹œ
+      renderTitlePlaceholder();
+    }
+
+    async function saveKeyToServer(key) {
+      try {
+        return await postJSON("/api/save-key", { api_key: key });
+      } catch (e1) {
+        try { return await postJSON("/save-key", { api_key: key }); }
+        catch (e2) { throw e2; }
+      }
+    }
+
+    el("saveKey").onclick = async () => {
+      const key = el("key").value.trim();
+      if (!key) { setStatus("statusKey", "?¤ë? ?…ë ¥?´ì£¼?¸ìš”."); return; }
+      setStatus("statusKey", "?€??ì¤‘ì…?ˆë‹¤...");
+      let savedToServer = false;
+      try {
+        const res = await saveKeyToServer(key);
+        setStatus("statusKey", res.message || "?œë²„???€?¥ë˜?ˆìŠµ?ˆë‹¤.");
+        savedToServer = true;
+      } catch (e) {
+        console.error(e);
+        setStatus("statusKey", "?œë²„ ?€???¤íŒ¨: " + e.message + " (ë¸Œë¼?°ì??ë§Œ ?€?¥í•©?ˆë‹¤)");
+      } finally {
+        state.apiKey = key;
+        localStorage.setItem("vc_api_key", key);
+        if (savedToServer) setTimeout(() => closeSettings(), 600);
+      }
+    };
+
+    el("applyKey").onclick = () => {
+      state.apiKey = el("key").value.trim();
+      if (state.apiKey) {
+        localStorage.setItem("vc_api_key", state.apiKey);
+        setStatus("statusKey", "?¸ì…˜??API ?¤ê? ?ìš©?˜ì—ˆ?µë‹ˆ??");
+        closeSettings();
+      } else {
+        setStatus("statusKey", "?¤ë? ?…ë ¥?´ì£¼?¸ìš”.");
+      }
+    };
+
+    loadStoredKey();
+  </script>
+</body>
+</html>
+

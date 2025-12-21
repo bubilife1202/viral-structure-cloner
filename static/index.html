@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <title>YouTube Pattern Benchmark</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+  <header>
+    <div class="container header-content">
+      <a href="/" class="logo">
+        <div class="logo-icon">V</div>
+        <span>YouTube Pattern Benchmark</span>
+      </a>
+      <div class="flex-row">
+        <button id="themeToggle" class="ghost" style="font-size:1.2rem;">🌙</button>
+        <button id="openSettings" class="secondary" onclick="openSettingsModal()">⚙️ API 설정</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="container">
+      <div class="hero-content">
+        <span class="hero-badge">AI 기반 바이럴 분석</span>
+        <h1 class="hero-title">500만 조회수 영상의 구조를<br><span class="gradient-text">3분 만에 내 것으로</span></h1>
+        <p class="hero-subtitle">성공한 유튜브 영상의 바이럴 패턴을 AI가 분석하고,<br>당신의 주제로 새로운 스크립트를 생성합니다.</p>
+
+        <div class="hero-features">
+          <div class="hero-feature">
+            <span class="feature-icon">🎣</span>
+            <span>훅 패턴 분석</span>
+          </div>
+          <div class="hero-feature">
+            <span class="feature-icon">📊</span>
+            <span>바이럴 점수 측정</span>
+          </div>
+          <div class="hero-feature">
+            <span class="feature-icon">✍️</span>
+            <span>스크립트 자동 생성</span>
+          </div>
+        </div>
+
+        <button id="heroStartBtn" class="hero-cta-btn">
+          <span>지금 바로 분석해보기</span>
+          <span class="cta-arrow">↓</span>
+        </button>
+
+        <div class="hero-stats">
+          <div class="stat-item">
+            <span class="stat-number">10,000+</span>
+            <span class="stat-label">분석된 영상</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <span class="stat-number">95%</span>
+            <span class="stat-label">분석 정확도</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <span class="stat-number">3분</span>
+            <span class="stat-label">평균 분석 시간</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <main class="container main-grid">
+
+    <!-- Left Sidebar: Controls -->
+    <aside class="flex-col">
+
+      <!-- Step 1: Analyze -->
+      <div class="panel step-panel">
+        <div class="step-header">
+          <span class="step-badge">STEP 01</span>
+          <span class="step-status" id="step1Status"></span>
+        </div>
+        <h3 class="step-title">🎬 영상 구조 분석</h3>
+        <p class="step-desc">벤치마킹할 유튜브 영상 URL을 입력하세요.</p>
+
+        <div class="form-group mt-4">
+          <label>YouTube URL</label>
+          <input type="text" id="urlInput" placeholder="https://www.youtube.com/watch?v=..." />
+        </div>
+
+        <button id="analyzeBtn" class="primary w-full btn-large">
+          <span class="btn-icon">🔍</span>
+          패턴 분석 시작
+        </button>
+
+        <!-- Loading Progress -->
+        <div id="analyzeProgress" class="progress-container hidden">
+          <div class="progress-step completed" data-step="1">
+            <span class="progress-icon">✓</span>
+            <span class="progress-text">영상 정보 가져오기</span>
+          </div>
+          <div class="progress-step" data-step="2">
+            <span class="progress-icon">2</span>
+            <span class="progress-text">자막 추출</span>
+          </div>
+          <div class="progress-step" data-step="3">
+            <span class="progress-icon">3</span>
+            <span class="progress-text">AI 구조 분석</span>
+          </div>
+          <div class="progress-step" data-step="4">
+            <span class="progress-icon">4</span>
+            <span class="progress-text">바이럴 점수 계산</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Generate -->
+      <div class="panel step-panel" id="step2Panel">
+        <div class="step-header">
+          <span class="step-badge secondary">STEP 02</span>
+          <span class="step-status" id="step2Status">Step 1을 먼저 완료하세요</span>
+        </div>
+        <h3 class="step-title">✍️ 스크립트 생성</h3>
+
+        <div class="form-group mt-4">
+          <label>주제 / 아이템</label>
+          <input type="text" id="topic" placeholder="예) AI 영어코칭, 다이어트 식단" />
+        </div>
+
+        <div class="flex-row">
+          <div class="w-full">
+            <label>톤앤매너</label>
+            <select id="tone">
+              <option value="default">기본 (중립)</option>
+              <option value="humor">유머러스</option>
+              <option value="serious">진지/신뢰</option>
+              <option value="emotional">감동/공감</option>
+              <option value="sharp">팩트폭격</option>
+            </select>
+          </div>
+          <div class="w-full">
+            <label>스타일</label>
+            <select id="style">
+              <option value="default">기본</option>
+              <option value="storytelling">스토리텔링</option>
+              <option value="informative">정보전달</option>
+              <option value="review">후기/리뷰</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group mt-4">
+          <label>타겟 시청자 (선택)</label>
+          <input type="text" id="audience" placeholder="예) 2030 직장인, 주부" />
+        </div>
+
+        <button id="generate" class="primary w-full btn-large" disabled>
+          <span class="btn-icon">✨</span>
+          스크립트 생성
+        </button>
+      </div>
+
+    </aside>
+
+    <!-- Right Content: Results -->
+    <section class="flex-col">
+
+      <!-- Analysis Result -->
+      <div class="panel result-panel">
+        <div class="panel-header">
+          <h3>📊 분석 리포트</h3>
+        </div>
+
+        <!-- Score Section -->
+        <div class="score-section">
+          <div class="score-gauge-container">
+            <svg class="score-gauge" viewBox="0 0 120 120">
+              <circle class="gauge-bg" cx="60" cy="60" r="54" />
+              <circle class="gauge-fill" id="scoreGauge" cx="60" cy="60" r="54" />
+            </svg>
+            <div class="score-value-container">
+              <span class="score-value" id="scoreValue">-</span>
+              <span class="score-label">Viral Score</span>
+              <span class="score-grade" id="scoreGrade">-</span>
+            </div>
+          </div>
+
+          <div class="score-breakdown">
+            <div class="breakdown-item">
+              <div class="breakdown-header">
+                <span>🎣 훅 강도</span>
+                <span class="breakdown-value" id="hookScore">-</span>
+              </div>
+              <div class="breakdown-bar">
+                <div class="breakdown-fill" id="hookBar" style="width: 0%"></div>
+              </div>
+            </div>
+            <div class="breakdown-item">
+              <div class="breakdown-header">
+                <span>🔄 흐름 일관성</span>
+                <span class="breakdown-value" id="flowScore">-</span>
+              </div>
+              <div class="breakdown-bar">
+                <div class="breakdown-fill" id="flowBar" style="width: 0%"></div>
+              </div>
+            </div>
+            <div class="breakdown-item">
+              <div class="breakdown-header">
+                <span>💡 심리 트리거</span>
+                <span class="breakdown-value" id="triggerScore">-</span>
+              </div>
+              <div class="breakdown-bar">
+                <div class="breakdown-fill" id="triggerBar" style="width: 0%"></div>
+              </div>
+            </div>
+            <div class="breakdown-item">
+              <div class="breakdown-header">
+                <span>📢 CTA 명확성</span>
+                <span class="breakdown-value" id="ctaScore">-</span>
+              </div>
+              <div class="breakdown-bar">
+                <div class="breakdown-fill" id="ctaBar" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="insight-box" id="insightBox">
+          <span class="insight-icon">💡</span>
+          <p id="scoreReason">영상을 분석하면 AI 인사이트가 여기에 표시됩니다.</p>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="summary-section">
+          <div class="summary-item">
+            <label>📝 핵심 요약</label>
+            <p id="summary" class="summary-text">-</p>
+          </div>
+          <div class="summary-item">
+            <label>🏷️ 키워드</label>
+            <div id="keywords" class="keywords-container">-</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Timeline Pattern -->
+      <div class="panel result-panel">
+        <div class="panel-header">
+          <h3>🎬 패턴 타임라인</h3>
+          <button id="resetPattern" class="btn-small secondary">↺ 초기화</button>
+        </div>
+
+        <!-- Visual Timeline Bar -->
+        <div class="timeline-visual" id="timelineVisual">
+          <div class="timeline-bar-container">
+            <div class="timeline-bar" id="timelineBar">
+              <!-- Segments will be added dynamically -->
+            </div>
+          </div>
+        </div>
+
+        <div id="timeline" class="timeline-container">
+          <div class="empty-state">
+            <span class="empty-icon">📹</span>
+            <p>영상을 분석하면 구조가 여기에 표시됩니다.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Script Output -->
+      <div class="panel result-panel">
+        <div class="panel-header">
+          <h3>✍️ 생성된 스크립트</h3>
+        </div>
+
+        <div class="script-tabs-container">
+          <div class="script-tabs" id="scriptTabs">
+            <!-- Tabs will go here -->
+          </div>
+          <button id="newVersionBtn" class="btn-small ghost hidden">+ 새 버전</button>
+        </div>
+
+        <div id="scriptContent" class="script-content">
+          <div class="empty-state">
+            <span class="empty-icon">✨</span>
+            <p>스크립트가 생성되면 여기에 표시됩니다.</p>
+          </div>
+        </div>
+
+        <div id="scriptBox" class="script-box hidden" contenteditable="true"></div>
+
+        <div class="script-actions hidden" id="scriptActions">
+          <button id="copyScript" class="secondary">
+            <span>📋</span> 복사
+          </button>
+          <button id="downloadScript" class="secondary">
+            <span>⬇️</span> 다운로드
+          </button>
+          <button id="regenerateScript" class="ghost">
+            <span>🔄</span> 다시 생성
+          </button>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>⚙️ 설정</h3>
+        <button id="closeSettings" class="ghost" onclick="closeSettingsModal()">✕</button>
+      </div>
+      <div class="input-group">
+        <label>Google Gemini API Key</label>
+        <input type="password" id="apiKeyInput" placeholder="AI Studio에서 발급받은 키 입력">
+        <p class="hint">키는 로컬 브라우저에만 저장됩니다.</p>
+        <div class="hint" style="margin-top:0.35rem; line-height:1.5;">
+          <div style="margin-top:0.35rem; font-size:0.95rem;">
+            영상 가이드: <a href="https://www.youtube.com/watch?v=CefySq5RZNo" target="_blank" rel="noreferrer" style="color:var(--primary); font-weight:600;">YouTube 링크 열기</a>
+          </div>
+        </div>
+      </div>
+      <div class="flex-row" style="justify-content:flex-end; margin-top:1rem;">
+        <button id="saveKeyBtn" class="primary">저장하기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Pattern Modal -->
+  <div id="editPatternModal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>✏️ 패턴 수정</h3>
+        <button id="closeEditPattern" class="ghost" onclick="closeEditPatternModal()">✕</button>
+      </div>
+      <div class="input-group">
+        <label>패턴 설명 (Formula)</label>
+        <textarea id="editFormula" rows="3"></textarea>
+      </div>
+      <div class="input-group">
+        <label>의도 태그 (Intent)</label>
+        <input type="text" id="editIntent" placeholder="콤마(,)로 구분">
+      </div>
+      <div class="flex-row" style="justify-content:flex-end; margin-top:1rem;">
+        <button id="savePatternBtn" class="primary">수정 완료</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">
+    <span id="toastMsg">알림 메시지</span>
+    <button id="toastAction" class="ghost" style="color:var(--accent); margin-left:auto; display:none;">Action</button>
+  </div>
+
+  <script src="/static/script.js"></script>
+</body>
+
+</html>

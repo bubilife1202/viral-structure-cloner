@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+dist/
+build/
+*.pyc
+*.log
+.env
+*.spec
+nul
+debug_log.txt
+.claude/
