@@ -442,11 +442,25 @@ document.addEventListener("DOMContentLoaded", () => {
     el("apiKeyInput").value = storedKey;
   }
 
-  // Theme Toggle
+  // Theme Toggle with localStorage
+  const loadTheme = () => {
+    const savedTheme = localStorage.getItem("vc_theme");
+    if (savedTheme === "dark") {
+      document.body.classList.add("dark");
+      el("themeToggle").innerText = "☀️";
+    } else {
+      document.body.classList.remove("dark");
+      el("themeToggle").innerText = "🌙";
+    }
+  };
+
+  loadTheme();
+
   el("themeToggle").onclick = () => {
     document.body.classList.toggle("dark");
     const isDark = document.body.classList.contains("dark");
     el("themeToggle").innerText = isDark ? "☀️" : "🌙";
+    localStorage.setItem("vc_theme", isDark ? "dark" : "light");
   };
 
   // Settings Modal
