@@ -1,7 +1,46 @@
+// 세션 ID 생성 및 heartbeat
+const SESSION_ID = 'user_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+
+function sendHeartbeat() {
+  fetch('/api/heartbeat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ session_id: SESSION_ID })
+  }).catch(() => {});
+}
+
+// 페이지 로드 시 즉시 heartbeat, 이후 10초마다
+sendHeartbeat();
+setInterval(sendHeartbeat, 10000);
+
+// 페이지 떠날 때 알림 (선택적)
+window.addEventListener('beforeunload', () => {
+  navigator.sendBeacon('/api/heartbeat', JSON.stringify({ session_id: SESSION_ID + '_leave' }));
+});
+
+// 개발자 도구 차단
+(function() {
+  // F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U 차단
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'F12' ||
+        (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i')) ||
+        (e.ctrlKey && e.shiftKey && (e.key === 'J' || e.key === 'j')) ||
+        (e.ctrlKey && (e.key === 'U' || e.key === 'u'))) {
+      e.preventDefault();
+      return false;
+    }
+  });
+
+  // 우클릭 차단
+  document.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
+    return false;
+  });
+})();
+
 const state = {
   analysis: null,
   originalTimeline: null,
-  apiKey: "",
   topic: "",
   tone: "default",
   style: "default",
@@ -68,6 +107,69 @@ async function postJSON(url, body) {
 }
 
 // Progress Steps Animation
+let progressTimers = [];
+let loadingTimers = [];
+
+const clearProgressTimers = () => {
+  progressTimers.forEach(t => clearTimeout(t));
+  progressTimers = [];
+};
+
+const clearLoadingTimers = () => {
+  loadingTimers.forEach(t => clearTimeout(t));
+  loadingTimers = [];
+};
+
+// Loading Overlay with time-based messages
+const loadingMessages = [
+  { delay: 0, title: "영상 분석 중...", subtitle: "영상 구조를 파악하고 있어요" },
+  { delay: 3000, title: "자막 추출 중...", subtitle: "AI가 대본을 읽고 있어요" },
+  { delay: 6000, title: "패턴 분석 중...", subtitle: "바이럴 구조를 분석하고 있어요" },
+  { delay: 10000, title: "거의 다 됐어요!", subtitle: "마무리 작업 중이에요", showTip: true, tip: "서버가 바빠요. 조금만 기다려 주세요~" },
+  { delay: 20000, title: "조금만 더요...", subtitle: "곧 완료됩니다", showTip: true, tip: "요청이 많아서 시간이 걸리고 있어요. 잠시만요!" },
+  { delay: 35000, title: "열심히 분석 중...", subtitle: "복잡한 영상이네요", showTip: true, tip: "긴 영상이거나 서버가 바쁠 때는 시간이 더 걸릴 수 있어요" }
+];
+
+const showLoadingOverlay = () => {
+  clearLoadingTimers();
+
+  const overlay = el("loadingOverlay");
+  const title = el("loadingTitle");
+  const subtitle = el("loadingSubtitle");
+  const tips = el("loadingTips");
+  const tipText = el("loadingTipText");
+
+  if (!overlay) return;
+
+  // Reset to initial state
+  title.innerText = loadingMessages[0].title;
+  subtitle.innerText = loadingMessages[0].subtitle;
+  tips.classList.add("hidden");
+
+  overlay.classList.remove("hidden");
+
+  // Set up timed message changes
+  loadingMessages.forEach((msg, idx) => {
+    if (idx === 0) return; // Skip first, already shown
+
+    loadingTimers.push(setTimeout(() => {
+      title.innerText = msg.title;
+      subtitle.innerText = msg.subtitle;
+
+      if (msg.showTip) {
+        tipText.innerText = msg.tip;
+        tips.classList.remove("hidden");
+      }
+    }, msg.delay));
+  });
+};
+
+const hideLoadingOverlay = () => {
+  clearLoadingTimers();
+  const overlay = el("loadingOverlay");
+  if (overlay) overlay.classList.add("hidden");
+};
+
 const updateProgress = (step) => {
   const container = el("analyzeProgress");
   if (!container) return;
@@ -87,8 +189,17 @@ const updateProgress = (step) => {
 };
 
 const hideProgress = () => {
+  clearProgressTimers();
   const container = el("analyzeProgress");
-  if (container) container.classList.add("hidden");
+  if (container) {
+    container.classList.add("hidden");
+    // Reset all steps
+    const steps = container.querySelectorAll(".progress-step");
+    steps.forEach((stepEl, idx) => {
+      stepEl.classList.remove("active", "completed");
+      stepEl.querySelector(".progress-icon").innerText = (idx + 1).toString();
+    });
+  }
 };
 
 // Score Gauge Animation
@@ -353,6 +464,26 @@ const renderBlueprint = (data) => {
 
   renderTimeline(data.timeline || []);
   updateGenerateButton();
+
+  // 분석 완료 후 STEP 2로 스크롤 및 하이라이트
+  setTimeout(() => {
+    const step2Panel = el("step2Panel");
+    const topicInput = el("topic");
+
+    if (step2Panel) {
+      // 스크롤
+      step2Panel.scrollIntoView({ behavior: "smooth", block: "center" });
+
+      // 하이라이트 효과
+      step2Panel.classList.add("highlight-pulse");
+      setTimeout(() => step2Panel.classList.remove("highlight-pulse"), 2000);
+
+      // 입력란 포커스
+      setTimeout(() => {
+        if (topicInput) topicInput.focus();
+      }, 800);
+    }
+  }, 500);
 };
 
 const renderScriptTabs = () => {
@@ -435,13 +566,6 @@ const downloadScript = () => {
 
 // Event Listeners
 document.addEventListener("DOMContentLoaded", () => {
-  // Load Key
-  const storedKey = localStorage.getItem("vc_api_key");
-  if (storedKey) {
-    state.apiKey = storedKey;
-    el("apiKeyInput").value = storedKey;
-  }
-
   // Theme Toggle with localStorage
   const loadTheme = () => {
     const savedTheme = localStorage.getItem("vc_theme");
@@ -463,6 +587,68 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem("vc_theme", isDark ? "dark" : "light");
   };
 
+  // YouTube Thumbnail Preview
+  function extractVideoId(url) {
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
+      /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/
+    ];
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match) return match[1];
+    }
+    return null;
+  }
+
+  function showThumbnailPreview(videoId) {
+    const preview = el("videoPreview");
+    const thumbnail = el("videoThumbnail");
+    if (!preview || !thumbnail) return;
+
+    thumbnail.src = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+    thumbnail.onerror = () => {
+      thumbnail.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+    };
+    preview.classList.remove("hidden");
+  }
+
+  function hideThumbnailPreview() {
+    const preview = el("videoPreview");
+    if (preview) preview.classList.add("hidden");
+  }
+
+  const urlInput = el("urlInput");
+  if (urlInput) {
+    urlInput.addEventListener("input", () => {
+      const url = urlInput.value.trim();
+      const videoId = extractVideoId(url);
+      if (videoId) {
+        showThumbnailPreview(videoId);
+      } else {
+        hideThumbnailPreview();
+      }
+    });
+
+    urlInput.addEventListener("paste", () => {
+      setTimeout(() => {
+        const url = urlInput.value.trim();
+        const videoId = extractVideoId(url);
+        if (videoId) {
+          showThumbnailPreview(videoId);
+        }
+      }, 0);
+    });
+  }
+
+  const clearUrlBtn = el("clearUrl");
+  if (clearUrlBtn) {
+    clearUrlBtn.onclick = () => {
+      if (urlInput) urlInput.value = "";
+      hideThumbnailPreview();
+      urlInput.focus();
+    };
+  }
+
   // Settings Modal
   window.openSettingsModal = () => {
     el("settingsModal").classList.add("show");
@@ -479,46 +665,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
   el("savePatternBtn").onclick = saveEditedPattern;
 
-  // Save Key
-  el("saveKeyBtn").onclick = async () => {
-    const key = el("apiKeyInput").value.trim();
-    if (!key) return showToast("API 키를 입력해주세요.");
-
-    state.apiKey = key;
-    localStorage.setItem("vc_api_key", key);
-
-    const modalEl = el("settingsModal");
-    try {
-      await postJSON("/api/save-key", { api_key: key });
-      showToast("API 키가 저장되었습니다.");
-    } catch (e) {
-      showToast("서버 오류! (로컬에는 저장됨)");
-    } finally {
-      if (modalEl) modalEl.classList.remove("show");
-    }
-  };
-
   // Analyze
   el("analyzeBtn").onclick = async () => {
     const url = el("urlInput").value.trim();
     if (!url) return showToast("URL을 입력해주세요.");
-    if (!state.apiKey) return showToast("API 키를 설정해주세요.", "설정하기", () => openSettingsModal());
 
     const btn = el("analyzeBtn");
     const originalText = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = `<div class="spinner"></div> 분석 중...`;
 
-    // Show progress
-    updateProgress(1);
+    // Show loading overlay
+    showLoadingOverlay();
 
     try {
-      // Simulate progress
-      setTimeout(() => updateProgress(2), 500);
-      setTimeout(() => updateProgress(3), 1500);
-      setTimeout(() => updateProgress(4), 3000);
-
-      const data = await postJSON("/api/analyze", { api_key: state.apiKey, url });
+      const data = await postJSON("/api/analyze", { url });
       renderBlueprint(data);
       showToast("분석이 완료되었습니다! 🎉");
     } catch (e) {
@@ -526,7 +687,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } finally {
       btn.disabled = false;
       btn.innerHTML = originalText;
-      hideProgress();
+      hideLoadingOverlay();
     }
   };
 
@@ -543,7 +704,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       const res = await postJSON("/api/generate", {
-        api_key: state.apiKey,
         topic,
         analysis: state.analysis,
         tone: el("tone").value,
@@ -629,15 +789,356 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Hero CTA Button - Scroll to URL input
-  el("heroStartBtn").onclick = () => {
-    const urlInput = el("urlInput");
-    if (urlInput) {
-      urlInput.scrollIntoView({ behavior: "smooth", block: "center" });
-      setTimeout(() => urlInput.focus(), 500);
-    }
+  // ========================================
+  // 메인 선택 카드 동작
+  // ========================================
+  const selectionSection = document.querySelector('.selection-section');
+  const mainWorkspace = el('mainWorkspace');
+
+  const showWorkspace = () => {
+    if (selectionSection) selectionSection.classList.add('hidden');
+    if (mainWorkspace) mainWorkspace.classList.remove('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  const showSelection = () => {
+    if (selectionSection) selectionSection.classList.remove('hidden');
+    if (mainWorkspace) mainWorkspace.classList.add('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Card 1: URL 분석
+  const selectUrlAnalysis = el('selectUrlAnalysis');
+  if (selectUrlAnalysis) {
+    selectUrlAnalysis.onclick = () => {
+      showWorkspace();
+      setTimeout(() => {
+        const urlInput = el('urlInput');
+        if (urlInput) urlInput.focus();
+      }, 300);
+    };
+  }
+
+  // Card 2: 빠른 시작 (템플릿)
+  const selectQuickStart = el('selectQuickStart');
+  if (selectQuickStart) {
+    selectQuickStart.onclick = () => {
+      openCategoryModal();
+    };
+  }
+
+  // Card 3: 영상 탐색 (준비중)
+  const selectExplore = el('selectExplore');
+  if (selectExplore) {
+    selectExplore.classList.add('disabled');
+    selectExplore.onclick = () => {
+      showToast('영상 탐색 기능은 준비 중입니다.');
+    };
+  }
+
+  // 뒤로가기 버튼
+  const backToSelectionBtn = el('backToSelectionBtn');
+  if (backToSelectionBtn) {
+    backToSelectionBtn.onclick = showSelection;
+  }
 
   // Initialize
   updateGenerateButton();
+
+  // ========================================
+  // 카테고리 기반 스크립트 생성
+  // ========================================
+
+  // 카테고리 데이터
+  const CATEGORIES = [
+    { id: "health", icon: "💪", name: "건강/운동" },
+    { id: "beauty", icon: "💄", name: "뷰티/화장품" },
+    { id: "food", icon: "🍳", name: "요리/맛집" },
+    { id: "finance", icon: "💰", name: "재테크/투자" },
+    { id: "business", icon: "💼", name: "창업/부업" },
+    { id: "study", icon: "📚", name: "공부/자기계발" },
+    { id: "tech", icon: "💻", name: "IT/테크" },
+    { id: "game", icon: "🎮", name: "게임" },
+    { id: "travel", icon: "✈️", name: "여행" },
+    { id: "pet", icon: "🐕", name: "반려동물" },
+    { id: "parenting", icon: "👶", name: "육아/교육" },
+    { id: "relationship", icon: "💑", name: "연애/결혼" },
+    { id: "psychology", icon: "🧠", name: "심리/힐링" },
+    { id: "fashion", icon: "👗", name: "패션" },
+    { id: "interior", icon: "🏠", name: "인테리어" },
+    { id: "car", icon: "🚗", name: "자동차" },
+    { id: "hobby", icon: "🎨", name: "취미/DIY" },
+    { id: "music", icon: "🎵", name: "음악" },
+    { id: "movie", icon: "🎬", name: "영화/드라마" },
+    { id: "book", icon: "📖", name: "독서/서평" },
+    { id: "news", icon: "📰", name: "시사/뉴스" },
+    { id: "science", icon: "🔬", name: "과학/상식" },
+    { id: "history", icon: "🏛️", name: "역사" },
+    { id: "language", icon: "🌏", name: "외국어" },
+    { id: "job", icon: "👔", name: "취업/이직" },
+    { id: "legal", icon: "⚖️", name: "법률/부동산" },
+    { id: "crypto", icon: "₿", name: "코인/NFT" },
+    { id: "asmr", icon: "🎧", name: "ASMR/브이로그" },
+    { id: "comedy", icon: "😂", name: "유머/예능" },
+    { id: "sports", icon: "⚽", name: "스포츠" },
+    { id: "yadam", icon: "👻", name: "야담/괴담" }
+  ];
+
+  // 구조 템플릿 데이터
+  const TEMPLATES = {
+    // 모든 카테고리 공통
+    common: [
+      {
+        id: "problem-solution",
+        icon: "🔧",
+        name: "문제-해결 구조",
+        structure: "[문제제기] → [공감] → [해결책] → [실행방법] → [CTA]",
+        desc: "문제를 먼저 제시하고 해결책을 알려주는 가장 보편적인 구조",
+        example: "\"이것만 알면 OO 해결됩니다\"",
+        timeline: [
+          { time: "00:00", phase: "HOOK", formula: "충격적인 문제 상황 제시", intent: "주의환기, 공감유도" },
+          { time: "00:15", phase: "BODY", formula: "왜 이 문제가 생기는지 원인 분석", intent: "신뢰구축, 전문성" },
+          { time: "00:45", phase: "BODY", formula: "구체적인 해결 방법 3가지", intent: "가치전달, 실용성" },
+          { time: "01:30", phase: "CTA", formula: "지금 바로 적용해보세요 + 구독 유도", intent: "행동유도, 전환" }
+        ]
+      },
+      {
+        id: "listicle",
+        icon: "📋",
+        name: "리스트형 구조",
+        structure: "[훅] → [#1] → [#2] → [#3] → [요약/CTA]",
+        desc: "숫자로 정리된 팁이나 방법을 전달하는 구조",
+        example: "\"OO하는 5가지 방법\"",
+        timeline: [
+          { time: "00:00", phase: "HOOK", formula: "\"이 5가지만 알면 OO 마스터\"", intent: "기대감, 구체성" },
+          { time: "00:10", phase: "BODY", formula: "첫 번째 팁 (가장 쉬운 것)", intent: "진입장벽 낮춤" },
+          { time: "00:30", phase: "BODY", formula: "두 번째, 세 번째 팁", intent: "가치 축적" },
+          { time: "01:00", phase: "BODY", formula: "네 번째, 다섯 번째 (핵심)", intent: "클라이맥스" },
+          { time: "01:30", phase: "CTA", formula: "요약 + 다음 영상 예고", intent: "정리, 전환유도" }
+        ]
+      },
+      {
+        id: "story",
+        icon: "📖",
+        name: "스토리텔링 구조",
+        structure: "[상황설정] → [갈등/문제] → [전환점] → [해결] → [교훈]",
+        desc: "이야기 형식으로 몰입감 있게 전달하는 구조",
+        example: "\"제가 OO했던 경험담\"",
+        timeline: [
+          { time: "00:00", phase: "HOOK", formula: "결과 먼저 보여주기 (Before/After)", intent: "호기심, 결과증명" },
+          { time: "00:15", phase: "BODY", formula: "예전 상황 설명 (공감 포인트)", intent: "동질감, 공감" },
+          { time: "00:40", phase: "BODY", formula: "어떻게 바뀌게 되었는지", intent: "전환점, 희망" },
+          { time: "01:10", phase: "BODY", formula: "구체적인 방법 공유", intent: "실용적 가치" },
+          { time: "01:40", phase: "CTA", formula: "여러분도 할 수 있어요", intent: "동기부여, 행동촉구" }
+        ]
+      },
+      {
+        id: "myth-busting",
+        icon: "❌",
+        name: "오해 타파 구조",
+        structure: "[잘못된 상식] → [왜 틀렸는지] → [진짜 정보] → [증거] → [CTA]",
+        desc: "흔한 오해를 깨고 진실을 알려주는 구조",
+        example: "\"OO하면 안 된다고? 다 거짓말입니다\"",
+        timeline: [
+          { time: "00:00", phase: "HOOK", formula: "\"다들 OO라고 하는데, 틀렸습니다\"", intent: "논쟁유발, 호기심" },
+          { time: "00:15", phase: "BODY", formula: "왜 이런 오해가 생겼는지", intent: "배경설명" },
+          { time: "00:35", phase: "BODY", formula: "실제 사실/데이터 제시", intent: "신뢰구축, 전문성" },
+          { time: "01:00", phase: "BODY", formula: "올바른 방법 안내", intent: "실용적 대안" },
+          { time: "01:25", phase: "CTA", formula: "더 많은 진실 알려드릴게요", intent: "후속영상 유도" }
+        ]
+      },
+      {
+        id: "comparison",
+        icon: "⚖️",
+        name: "비교 분석 구조",
+        structure: "[비교대상 소개] → [기준 설명] → [항목별 비교] → [결론] → [추천]",
+        desc: "두 가지 이상을 비교해서 선택을 도와주는 구조",
+        example: "\"A vs B, 뭐가 더 좋을까?\"",
+        timeline: [
+          { time: "00:00", phase: "HOOK", formula: "\"A vs B, 결론부터 말씀드립니다\"", intent: "결론 예고, 호기심" },
+          { time: "00:15", phase: "BODY", formula: "비교 기준 설명", intent: "공정성 확보" },
+          { time: "00:35", phase: "BODY", formula: "각 항목별 비교 분석", intent: "정보 전달" },
+          { time: "01:15", phase: "BODY", formula: "상황별 추천", intent: "맞춤형 조언" },
+          { time: "01:35", phase: "CTA", formula: "댓글로 의견 나눠주세요", intent: "참여유도" }
+        ]
+      },
+      {
+        id: "tutorial",
+        icon: "🎓",
+        name: "튜토리얼 구조",
+        structure: "[완성본 미리보기] → [준비물] → [단계별 설명] → [팁] → [마무리]",
+        desc: "따라하기 쉽게 단계별로 알려주는 구조",
+        example: "\"이대로만 따라하세요\"",
+        timeline: [
+          { time: "00:00", phase: "HOOK", formula: "완성된 결과물 먼저 보여주기", intent: "목표 제시, 동기부여" },
+          { time: "00:15", phase: "BODY", formula: "필요한 준비물/사전지식", intent: "진입장벽 낮춤" },
+          { time: "00:30", phase: "BODY", formula: "Step 1, 2, 3 순차 설명", intent: "따라하기 쉬움" },
+          { time: "01:20", phase: "BODY", formula: "자주하는 실수 & 꿀팁", intent: "추가 가치" },
+          { time: "01:40", phase: "CTA", formula: "다음 레벨 영상 예고", intent: "시리즈화" }
+        ]
+      }
+    ]
+  };
+
+  // 카테고리 모달 상태
+  let selectedCategory = null;
+  let selectedTemplate = null;
+
+  // 카테고리 그리드 렌더링
+  const renderCategoryGrid = () => {
+    const grid = el("categoryGrid");
+    if (!grid) return;
+
+    grid.innerHTML = CATEGORIES.map(cat => `
+      <div class="category-item" data-cat-id="${cat.id}">
+        <span class="cat-icon">${cat.icon}</span>
+        <span class="cat-name">${cat.name}</span>
+      </div>
+    `).join("");
+
+    // 클릭 이벤트
+    grid.querySelectorAll(".category-item").forEach(item => {
+      item.onclick = () => {
+        selectedCategory = CATEGORIES.find(c => c.id === item.dataset.catId);
+        showTemplateStep();
+      };
+    });
+  };
+
+  // 템플릿 그리드 렌더링
+  const renderTemplateGrid = () => {
+    const grid = el("templateGrid");
+    if (!grid) return;
+
+    const templates = TEMPLATES.common;
+    grid.innerHTML = templates.map(tpl => `
+      <div class="template-item" data-tpl-id="${tpl.id}">
+        <div class="tpl-header">
+          <span class="tpl-icon">${tpl.icon}</span>
+          <span class="tpl-name">${tpl.name}</span>
+        </div>
+        <div class="tpl-structure">${tpl.structure}</div>
+        <p class="tpl-desc">${tpl.desc}</p>
+        <p class="tpl-example">${tpl.example}</p>
+      </div>
+    `).join("");
+
+    // 클릭 이벤트
+    grid.querySelectorAll(".template-item").forEach(item => {
+      item.onclick = () => {
+        selectedTemplate = TEMPLATES.common.find(t => t.id === item.dataset.tplId);
+        showTopicStep();
+      };
+    });
+  };
+
+  // Step 전환 함수들
+  const showCategoryStep = () => {
+    el("categoryStep1").classList.remove("hidden");
+    el("categoryStep2").classList.add("hidden");
+    el("categoryStep3").classList.add("hidden");
+  };
+
+  const showTemplateStep = () => {
+    el("categoryStep1").classList.add("hidden");
+    el("categoryStep2").classList.remove("hidden");
+    el("categoryStep3").classList.add("hidden");
+    renderTemplateGrid();
+  };
+
+  const showTopicStep = () => {
+    el("categoryStep1").classList.add("hidden");
+    el("categoryStep2").classList.add("hidden");
+    el("categoryStep3").classList.remove("hidden");
+
+    // 선택 정보 표시
+    el("selectedCategoryName").innerText = `${selectedCategory.icon} ${selectedCategory.name}`;
+    el("selectedTemplateName").innerText = `${selectedTemplate.icon} ${selectedTemplate.name}`;
+  };
+
+  // 카테고리 모달 열기/닫기
+  window.openCategoryModal = () => {
+    selectedCategory = null;
+    selectedTemplate = null;
+    showCategoryStep();
+    renderCategoryGrid();
+    el("categoryModal").classList.add("show");
+  };
+
+  window.closeCategoryModal = () => {
+    el("categoryModal").classList.remove("show");
+  };
+
+  window.backToCategories = () => {
+    showCategoryStep();
+  };
+
+  window.backToTemplates = () => {
+    showTemplateStep();
+  };
+
+  // 카테고리 버튼 클릭
+  const categoryBtn = el("openCategoryBtn");
+  if (categoryBtn) {
+    categoryBtn.onclick = openCategoryModal;
+  }
+
+  // 템플릿 기반 스크립트 생성
+  const generateFromTemplateBtn = el("generateFromTemplate");
+  if (generateFromTemplateBtn) {
+    generateFromTemplateBtn.onclick = async () => {
+      const topic = el("categoryTopic").value.trim();
+      if (!topic) return showToast("주제를 입력해주세요.");
+
+      const btn = generateFromTemplateBtn;
+      const originalText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `<div class="spinner"></div> 생성 중...`;
+
+      try {
+        // 템플릿 기반 분석 데이터 구성
+        const templateAnalysis = {
+          one_line_summary: `${selectedCategory.name} 분야의 ${selectedTemplate.name} 콘텐츠`,
+          viral_score: 75,
+          keywords: [selectedCategory.name, topic],
+          timeline: selectedTemplate.timeline
+        };
+
+        // 스크립트 생성 API 호출
+        const res = await postJSON("/api/generate", {
+          topic,
+          analysis: templateAnalysis,
+          tone: "default",
+          style: "default",
+          audience: "",
+          category: selectedCategory.name,
+          template: selectedTemplate.name
+        });
+
+        // 모달 닫기
+        closeCategoryModal();
+
+        // 결과 표시
+        state.analysis = templateAnalysis;
+        renderBlueprint(templateAnalysis);
+
+        const id = `Ver ${state.scripts.length + 1}`;
+        state.scripts.push({ id, text: res.script });
+        state.activeScriptId = id;
+
+        renderScriptTabs();
+        renderScriptContent(res.script);
+        showToast("스크립트가 생성되었습니다! ✨");
+
+        // 결과로 스크롤
+        el("step3Panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+      } catch (e) {
+        showToast(`생성 실패: ${e.message}`);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+      }
+    };
+  }
 });

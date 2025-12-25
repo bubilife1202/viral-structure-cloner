@@ -18,66 +18,60 @@
       </a>
       <div class="flex-row">
         <button id="themeToggle" class="ghost" style="font-size:1.2rem;">🌙</button>
-        <button id="openSettings" class="secondary" onclick="openSettingsModal()">⚙️ API 설정</button>
       </div>
     </div>
   </header>
 
-  <!-- Hero Section -->
-  <section class="hero-section">
+  <!-- Main Selection Section -->
+  <section class="selection-section">
     <div class="container">
-      <div class="hero-content">
-        <span class="hero-badge">AI 기반 바이럴 분석</span>
-        <h1 class="hero-title">500만 조회수 영상의 구조를<br><span class="gradient-text">3분 만에 내 것으로</span></h1>
-        <p class="hero-subtitle">성공한 유튜브 영상의 바이럴 패턴을 AI가 분석하고,<br>당신의 주제로 새로운 스크립트를 생성합니다.</p>
+      <div class="selection-header">
+        <h1 class="selection-title">어떻게 시작할까요?</h1>
+        <p class="selection-subtitle">바이럴 스크립트를 만드는 3가지 방법</p>
+      </div>
 
-        <div class="hero-features">
-          <div class="hero-feature">
-            <span class="feature-icon">🎣</span>
-            <span>훅 패턴 분석</span>
-          </div>
-          <div class="hero-feature">
-            <span class="feature-icon">📊</span>
-            <span>바이럴 점수 측정</span>
-          </div>
-          <div class="hero-feature">
-            <span class="feature-icon">✍️</span>
-            <span>스크립트 자동 생성</span>
-          </div>
+      <div class="selection-cards">
+        <!-- Card 1: URL 분석 -->
+        <div class="selection-card" id="selectUrlAnalysis">
+          <div class="card-icon">🎯</div>
+          <h3 class="card-title">따라할 영상이 있어요</h3>
+          <p class="card-desc">URL 붙여넣기</p>
+          <p class="card-detail">특정 영상의 구조를 그대로 복제해서 내 주제로 스크립트를 만들어요</p>
         </div>
 
-        <button id="heroStartBtn" class="hero-cta-btn">
-          <span>지금 바로 분석해보기</span>
-          <span class="cta-arrow">↓</span>
-        </button>
+        <!-- Card 2: 빠른 시작 -->
+        <div class="selection-card" id="selectQuickStart">
+          <div class="card-icon">⚡</div>
+          <h3 class="card-title">바로 시작</h3>
+          <p class="card-desc">템플릿 선택</p>
+          <p class="card-detail">검증된 바이럴 구조 템플릿으로 URL 없이 바로 스크립트를 생성해요</p>
+        </div>
 
-        <div class="hero-stats">
-          <div class="stat-item">
-            <span class="stat-number">10,000+</span>
-            <span class="stat-label">분석된 영상</span>
-          </div>
-          <div class="stat-divider"></div>
-          <div class="stat-item">
-            <span class="stat-number">95%</span>
-            <span class="stat-label">분석 정확도</span>
-          </div>
-          <div class="stat-divider"></div>
-          <div class="stat-item">
-            <span class="stat-number">3분</span>
-            <span class="stat-label">평균 분석 시간</span>
-          </div>
+        <!-- Card 3: 영상 탐색 -->
+        <div class="selection-card" id="selectExplore">
+          <div class="card-icon">🔍</div>
+          <h3 class="card-title">영상 찾아보기</h3>
+          <p class="card-desc">인기영상 탐색</p>
+          <p class="card-detail">카테고리별 인기 영상을 둘러보고 마음에 드는 영상을 선택해서 분석해요</p>
+          <span class="card-badge">준비중</span>
         </div>
       </div>
+
+      <p class="selection-hint">Free Plan: 1일 1회 분석 가능</p>
     </div>
   </section>
 
-  <main class="container main-grid">
+  <main class="container main-grid hidden" id="mainWorkspace">
 
-    <!-- Left Sidebar: Controls -->
-    <aside class="flex-col">
+      <!-- Back to Selection -->
+      <div class="back-to-selection">
+        <button id="backToSelectionBtn" class="ghost">
+          <span>←</span> 다른 방법으로 시작하기
+        </button>
+      </div>
 
       <!-- Step 1: Analyze -->
-      <div class="panel step-panel">
+      <div class="panel step-panel grid-step1">
         <div class="step-header">
           <span class="step-badge">STEP 01</span>
           <span class="step-status" id="step1Status"></span>
@@ -88,6 +82,15 @@
         <div class="form-group mt-4">
           <label>YouTube URL</label>
           <input type="text" id="urlInput" placeholder="https://www.youtube.com/watch?v=..." />
+        </div>
+
+        <!-- 썸네일 미리보기 -->
+        <div id="videoPreview" class="video-preview hidden">
+          <img id="videoThumbnail" src="" alt="Video Thumbnail" />
+          <div class="video-preview-info">
+            <span class="video-preview-badge">📺 분석할 영상</span>
+            <button id="clearUrl" class="ghost btn-small" title="URL 지우기">✕</button>
+          </div>
         </div>
 
         <button id="analyzeBtn" class="primary w-full btn-large">
@@ -117,7 +120,7 @@
       </div>
 
       <!-- Step 2: Generate -->
-      <div class="panel step-panel" id="step2Panel">
+      <div class="panel step-panel grid-step2" id="step2Panel">
         <div class="step-header">
           <span class="step-badge secondary">STEP 02</span>
           <span class="step-status" id="step2Status">Step 1을 먼저 완료하세요</span>
@@ -162,13 +165,8 @@
         </button>
       </div>
 
-    </aside>
-
-    <!-- Right Content: Results -->
-    <section class="flex-col">
-
       <!-- Analysis Result -->
-      <div class="panel result-panel">
+      <div class="panel result-panel grid-analysis">
         <div class="panel-header">
           <h3>📊 분석 리포트</h3>
         </div>
@@ -247,7 +245,7 @@
       </div>
 
       <!-- Timeline Pattern -->
-      <div class="panel result-panel">
+      <div class="panel result-panel grid-timeline">
         <div class="panel-header">
           <h3>🎬 패턴 타임라인</h3>
           <button id="resetPattern" class="btn-small secondary">↺ 초기화</button>
@@ -271,7 +269,7 @@
       </div>
 
       <!-- Script Output -->
-      <div class="panel result-panel">
+      <div class="panel result-panel grid-script">
         <div class="panel-header">
           <h3>✍️ 생성된 스크립트</h3>
         </div>
@@ -305,28 +303,44 @@
         </div>
       </div>
 
-    </section>
   </main>
 
-  <!-- Settings Modal -->
-  <div id="settingsModal" class="modal-overlay">
-    <div class="modal">
+  <!-- Category Selection Modal -->
+  <div id="categoryModal" class="modal-overlay">
+    <div class="modal modal-large">
       <div class="modal-header">
-        <h3>⚙️ 설정</h3>
-        <button id="closeSettings" class="ghost" onclick="closeSettingsModal()">✕</button>
+        <h3>📂 카테고리 선택</h3>
+        <button class="ghost" onclick="closeCategoryModal()">✕</button>
       </div>
-      <div class="input-group">
-        <label>Google Gemini API Key</label>
-        <input type="password" id="apiKeyInput" placeholder="AI Studio에서 발급받은 키 입력">
-        <p class="hint">키는 로컬 브라우저에만 저장됩니다.</p>
-        <div class="hint" style="margin-top:0.35rem; line-height:1.5;">
-          <div style="margin-top:0.35rem; font-size:0.95rem;">
-            영상 가이드: <a href="https://www.youtube.com/watch?v=CefySq5RZNo" target="_blank" rel="noreferrer" style="color:var(--primary); font-weight:600;">YouTube 링크 열기</a>
-          </div>
+
+      <!-- Step 1: Category -->
+      <div id="categoryStep1" class="category-step">
+        <p class="modal-desc">어떤 콘텐츠를 만드시나요?</p>
+        <div class="category-grid" id="categoryGrid"></div>
+      </div>
+
+      <!-- Step 2: Template -->
+      <div id="categoryStep2" class="category-step hidden">
+        <button class="ghost back-btn" onclick="backToCategories()">← 카테고리 다시 선택</button>
+        <p class="modal-desc">어떤 구조로 만들까요?</p>
+        <div class="template-grid" id="templateGrid"></div>
+      </div>
+
+      <!-- Step 3: Topic Input -->
+      <div id="categoryStep3" class="category-step hidden">
+        <button class="ghost back-btn" onclick="backToTemplates()">← 구조 다시 선택</button>
+        <div class="selected-info">
+          <span class="selected-category" id="selectedCategoryName"></span>
+          <span class="selected-template" id="selectedTemplateName"></span>
         </div>
-      </div>
-      <div class="flex-row" style="justify-content:flex-end; margin-top:1rem;">
-        <button id="saveKeyBtn" class="primary">저장하기</button>
+        <div class="form-group mt-4">
+          <label>주제를 입력하세요</label>
+          <input type="text" id="categoryTopic" placeholder="예) 아침 공복에 물 마시기, 주식 초보 시작법" />
+        </div>
+        <button id="generateFromTemplate" class="primary w-full btn-large">
+          <span class="btn-icon">✨</span>
+          스크립트 생성
+        </button>
       </div>
     </div>
   </div>
@@ -348,6 +362,19 @@
       </div>
       <div class="flex-row" style="justify-content:flex-end; margin-top:1rem;">
         <button id="savePatternBtn" class="primary">수정 완료</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay" class="loading-overlay hidden">
+    <div class="loading-content">
+      <div class="loading-spinner-large"></div>
+      <p class="loading-title" id="loadingTitle">영상 분석 중...</p>
+      <p class="loading-subtitle" id="loadingSubtitle">영상 구조를 파악하고 있어요</p>
+      <div class="loading-tips hidden" id="loadingTips">
+        <span class="loading-tip-icon">💡</span>
+        <p id="loadingTipText">서버가 바빠요. 조금만 기다려 주세요~</p>
       </div>
     </div>
   </div>
@@ -376,11 +403,20 @@
         </div>
       </div>
       <div class="footer-bottom">
-        <p class="copyright">© 2024 Reels Code. All rights reserved.</p>
-        <p class="warning">본 서비스의 무단 복제, 배포, 수정을 금지합니다.</p>
+        <p class="copyright">© 2025 Reels Code. All rights reserved.</p>
       </div>
     </div>
   </footer>
+
+  <!-- 플로팅 카카오톡 문의 버튼 -->
+  <a href="https://litt.ly/reels_code_official/sale/XdbLaGW" target="_blank" rel="noopener noreferrer" class="floating-btn" title="평생 소장 문의">
+    <span class="floating-btn-text">평생 소장 문의</span>
+    <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28">
+      <path d="M12 3C6.48 3 2 6.58 2 11c0 2.83 1.82 5.31 4.56 6.72-.14.52-.91 3.36-.94 3.58 0 0-.02.17.09.24.1.06.23.03.23.03.31-.04 3.6-2.35 4.17-2.75.62.09 1.25.13 1.89.13 5.52 0 10-3.58 10-8s-4.48-8-10-8z"/>
+    </svg>
+  </a>
+
+<style>    .floating-btn {      position: fixed;      bottom: 24px;      right: 24px;      height: 52px;      padding: 0 20px 0 16px;      background: #FEE500;      border-radius: 26px;      display: flex;      align-items: center;      justify-content: center;      gap: 10px;      color: #3C1E1E;      box-shadow: 0 4px 16px rgba(0,0,0,0.3);      z-index: 9999;      transition: transform 0.2s, box-shadow 0.2s;      text-decoration: none;      animation: pulse 2s infinite;    }    .floating-btn-text {      font-size: 15px;      font-weight: 700;      white-space: nowrap;    }    .floating-btn:hover {      transform: scale(1.05);      box-shadow: 0 6px 24px rgba(0,0,0,0.4);      animation: none;    }    @keyframes pulse {      0%, 100% {        box-shadow: 0 4px 16px rgba(0,0,0,0.3);      }      50% {        box-shadow: 0 4px 24px rgba(254, 229, 0, 0.6), 0 0 0 10px rgba(254, 229, 0, 0.15);      }    }  </style>
 
   <script src="/static/script.js"></script>
 </body>
