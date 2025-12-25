@@ -9,3 +9,4 @@ build/
 nul
 debug_log.txt
 .claude/
+data/
