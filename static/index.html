@@ -305,45 +305,70 @@
 
   </main>
 
-  <!-- Category Selection Modal -->
-  <div id="categoryModal" class="modal-overlay">
-    <div class="modal modal-large">
-      <div class="modal-header">
-        <h3>📂 카테고리 선택</h3>
-        <button class="ghost" onclick="closeCategoryModal()">✕</button>
-      </div>
+  <!-- Template Workspace (바로 시작) -->
+  <main class="container template-workspace hidden" id="templateWorkspace">
+    <div class="back-to-selection">
+      <button id="backFromTemplate" class="ghost">
+        <span>←</span> 다른 방법으로 시작하기
+      </button>
+    </div>
 
-      <!-- Step 1: Category -->
-      <div id="categoryStep1" class="category-step">
-        <p class="modal-desc">어떤 콘텐츠를 만드시나요?</p>
-        <div class="category-grid" id="categoryGrid"></div>
-      </div>
+    <div class="template-page-header">
+      <h2>⚡ 바로 시작</h2>
+      <p>검증된 바이럴 구조 템플릿으로 스크립트를 생성해요</p>
+    </div>
 
-      <!-- Step 2: Template -->
-      <div id="categoryStep2" class="category-step hidden">
-        <button class="ghost back-btn" onclick="backToCategories()">← 카테고리 다시 선택</button>
-        <p class="modal-desc">어떤 구조로 만들까요?</p>
-        <div class="template-grid" id="templateGrid"></div>
-      </div>
+    <!-- Step 1: Category -->
+    <div id="templateStep1" class="template-step">
+      <h3 class="step-label">1. 카테고리 선택</h3>
+      <div class="category-grid-page" id="categoryGridPage"></div>
+    </div>
 
-      <!-- Step 3: Topic Input -->
-      <div id="categoryStep3" class="category-step hidden">
-        <button class="ghost back-btn" onclick="backToTemplates()">← 구조 다시 선택</button>
-        <div class="selected-info">
-          <span class="selected-category" id="selectedCategoryName"></span>
-          <span class="selected-template" id="selectedTemplateName"></span>
-        </div>
-        <div class="form-group mt-4">
-          <label>주제를 입력하세요</label>
-          <input type="text" id="categoryTopic" placeholder="예) 아침 공복에 물 마시기, 주식 초보 시작법" />
-        </div>
-        <button id="generateFromTemplate" class="primary w-full btn-large">
+    <!-- Step 2: Template -->
+    <div id="templateStep2" class="template-step hidden">
+      <button class="ghost back-btn-inline" onclick="backToCategoriesPage()">← 카테고리 다시 선택</button>
+      <h3 class="step-label">2. 구조 선택</h3>
+      <div class="template-grid-page" id="templateGridPage"></div>
+    </div>
+
+    <!-- Step 3: Topic Input + Generate -->
+    <div id="templateStep3" class="template-step hidden">
+      <button class="ghost back-btn-inline" onclick="backToTemplatesPage()">← 구조 다시 선택</button>
+      <div class="selected-badges">
+        <span class="badge-category" id="selectedCategoryBadge"></span>
+        <span class="badge-template" id="selectedTemplateBadge"></span>
+      </div>
+      <h3 class="step-label">3. 주제 입력</h3>
+      <div class="topic-input-section">
+        <input type="text" id="templateTopic" class="topic-input-large" placeholder="예) 아침 공복에 물 마시기, 주식 초보 시작법" />
+        <button id="generateFromTemplatePage" class="primary btn-large btn-generate">
           <span class="btn-icon">✨</span>
           스크립트 생성
         </button>
       </div>
     </div>
-  </div>
+
+    <!-- Script Result -->
+    <div id="templateResult" class="template-result hidden">
+      <div class="panel result-panel">
+        <div class="panel-header">
+          <h3>✍️ 생성된 스크립트</h3>
+        </div>
+        <div id="templateScriptBox" class="script-box" contenteditable="true"></div>
+        <div class="script-actions">
+          <button id="copyTemplateScript" class="secondary">
+            <span>📋</span> 복사
+          </button>
+          <button id="downloadTemplateScript" class="secondary">
+            <span>⬇️</span> 다운로드
+          </button>
+          <button id="regenerateTemplateScript" class="ghost">
+            <span>🔄</span> 다시 생성
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
 
   <!-- Edit Pattern Modal -->
   <div id="editPatternModal" class="modal-overlay">

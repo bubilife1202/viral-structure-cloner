@@ -125,9 +125,9 @@ const loadingMessages = [
   { delay: 0, title: "영상 분석 중...", subtitle: "영상 구조를 파악하고 있어요" },
   { delay: 3000, title: "자막 추출 중...", subtitle: "AI가 대본을 읽고 있어요" },
   { delay: 6000, title: "패턴 분석 중...", subtitle: "바이럴 구조를 분석하고 있어요" },
-  { delay: 10000, title: "거의 다 됐어요!", subtitle: "마무리 작업 중이에요", showTip: true, tip: "서버가 바빠요. 조금만 기다려 주세요~" },
-  { delay: 20000, title: "조금만 더요...", subtitle: "곧 완료됩니다", showTip: true, tip: "요청이 많아서 시간이 걸리고 있어요. 잠시만요!" },
-  { delay: 35000, title: "열심히 분석 중...", subtitle: "복잡한 영상이네요", showTip: true, tip: "긴 영상이거나 서버가 바쁠 때는 시간이 더 걸릴 수 있어요" }
+  { delay: 10000, title: "거의 다 됐어요!", subtitle: "마무리 작업 중이에요", showTip: true, tip: "조금만 기다려주세요~" },
+  { delay: 20000, title: "조금만 더요...", subtitle: "곧 완료됩니다", showTip: true, tip: "잠시만요!" },
+  { delay: 35000, title: "열심히 분석 중...", subtitle: "복잡한 영상이네요", showTip: true, tip: "곧 완료됩니다!" }
 ];
 
 const showLoadingOverlay = () => {
@@ -794,16 +794,28 @@ document.addEventListener("DOMContentLoaded", () => {
   // ========================================
   const selectionSection = document.querySelector('.selection-section');
   const mainWorkspace = el('mainWorkspace');
+  const templateWorkspace = el('templateWorkspace');
 
   const showWorkspace = () => {
     if (selectionSection) selectionSection.classList.add('hidden');
+    if (templateWorkspace) templateWorkspace.classList.add('hidden');
     if (mainWorkspace) mainWorkspace.classList.remove('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const showTemplateWorkspace = () => {
+    if (selectionSection) selectionSection.classList.add('hidden');
+    if (mainWorkspace) mainWorkspace.classList.add('hidden');
+    if (templateWorkspace) templateWorkspace.classList.remove('hidden');
+    renderCategoryGridPage();
+    resetTemplateSteps();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const showSelection = () => {
     if (selectionSection) selectionSection.classList.remove('hidden');
     if (mainWorkspace) mainWorkspace.classList.add('hidden');
+    if (templateWorkspace) templateWorkspace.classList.add('hidden');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -823,7 +835,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const selectQuickStart = el('selectQuickStart');
   if (selectQuickStart) {
     selectQuickStart.onclick = () => {
-      openCategoryModal();
+      showTemplateWorkspace();
     };
   }
 
@@ -840,6 +852,236 @@ document.addEventListener("DOMContentLoaded", () => {
   const backToSelectionBtn = el('backToSelectionBtn');
   if (backToSelectionBtn) {
     backToSelectionBtn.onclick = showSelection;
+  }
+
+  // 템플릿 페이지 뒤로가기
+  const backFromTemplate = el('backFromTemplate');
+  if (backFromTemplate) {
+    backFromTemplate.onclick = showSelection;
+  }
+
+  // ========================================
+  // 템플릿 페이지 (바로 시작) 기능
+  // ========================================
+
+  // 페이지 상태
+  let pageSelectedCategory = null;
+  let pageSelectedTemplate = null;
+
+  // 카테고리 그리드 렌더링 (페이지 버전)
+  const renderCategoryGridPage = () => {
+    const grid = el("categoryGridPage");
+    if (!grid) return;
+
+    grid.innerHTML = CATEGORIES.map(cat => `
+      <div class="category-card-page" data-cat-id="${cat.id}">
+        <span class="cat-icon-large">${cat.icon}</span>
+        <span class="cat-name">${cat.name}</span>
+      </div>
+    `).join("");
+
+    // 클릭 이벤트
+    grid.querySelectorAll(".category-card-page").forEach(item => {
+      item.onclick = () => {
+        pageSelectedCategory = CATEGORIES.find(c => c.id === item.dataset.catId);
+        showTemplateStepPage();
+      };
+    });
+  };
+
+  // 템플릿 그리드 렌더링 (페이지 버전)
+  const renderTemplateGridPage = () => {
+    const grid = el("templateGridPage");
+    if (!grid) return;
+
+    const templates = TEMPLATES.common;
+    grid.innerHTML = templates.map(tpl => `
+      <div class="template-card-page" data-tpl-id="${tpl.id}">
+        <div class="tpl-header-page">
+          <span class="tpl-icon-large">${tpl.icon}</span>
+          <span class="tpl-name">${tpl.name}</span>
+        </div>
+        <div class="tpl-structure">${tpl.structure}</div>
+        <p class="tpl-desc">${tpl.desc}</p>
+        <p class="tpl-example">${tpl.example}</p>
+      </div>
+    `).join("");
+
+    // 클릭 이벤트
+    grid.querySelectorAll(".template-card-page").forEach(item => {
+      item.onclick = () => {
+        pageSelectedTemplate = TEMPLATES.common.find(t => t.id === item.dataset.tplId);
+        showTopicStepPage();
+      };
+    });
+  };
+
+  // Step 전환 함수들 (페이지 버전)
+  const resetTemplateSteps = () => {
+    pageSelectedCategory = null;
+    pageSelectedTemplate = null;
+    el("templateStep1").classList.remove("hidden");
+    el("templateStep2").classList.add("hidden");
+    el("templateStep3").classList.add("hidden");
+    el("templateResult").classList.add("hidden");
+    const topicInput = el("templateTopic");
+    if (topicInput) topicInput.value = "";
+  };
+
+  const showTemplateStepPage = () => {
+    el("templateStep1").classList.add("hidden");
+    el("templateStep2").classList.remove("hidden");
+    el("templateStep3").classList.add("hidden");
+    renderTemplateGridPage();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const showTopicStepPage = () => {
+    el("templateStep1").classList.add("hidden");
+    el("templateStep2").classList.add("hidden");
+    el("templateStep3").classList.remove("hidden");
+
+    // 선택 정보 표시
+    el("selectedCategoryBadge").innerText = `${pageSelectedCategory.icon} ${pageSelectedCategory.name}`;
+    el("selectedTemplateBadge").innerText = `${pageSelectedTemplate.icon} ${pageSelectedTemplate.name}`;
+
+    // 입력란 포커스
+    setTimeout(() => {
+      const topicInput = el("templateTopic");
+      if (topicInput) topicInput.focus();
+    }, 300);
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // 뒤로가기 함수들 (전역)
+  window.backToCategoriesPage = () => {
+    pageSelectedCategory = null;
+    el("templateStep1").classList.remove("hidden");
+    el("templateStep2").classList.add("hidden");
+    el("templateStep3").classList.add("hidden");
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  window.backToTemplatesPage = () => {
+    pageSelectedTemplate = null;
+    el("templateStep1").classList.add("hidden");
+    el("templateStep2").classList.remove("hidden");
+    el("templateStep3").classList.add("hidden");
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // 템플릿 페이지에서 스크립트 생성
+  const generateFromTemplatePageBtn = el("generateFromTemplatePage");
+  if (generateFromTemplatePageBtn) {
+    generateFromTemplatePageBtn.onclick = async () => {
+      const topic = el("templateTopic").value.trim();
+      if (!topic) return showToast("주제를 입력해주세요.");
+
+      if (!pageSelectedCategory || !pageSelectedTemplate) {
+        return showToast("카테고리와 구조를 선택해주세요.");
+      }
+
+      const btn = generateFromTemplatePageBtn;
+      const originalText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `<div class="spinner"></div> 생성 중...`;
+
+      try {
+        // 템플릿 기반 분석 데이터 구성
+        const templateAnalysis = {
+          one_line_summary: `${pageSelectedCategory.name} 분야의 ${pageSelectedTemplate.name} 콘텐츠`,
+          viral_score: 75,
+          keywords: [pageSelectedCategory.name, topic],
+          timeline: pageSelectedTemplate.timeline
+        };
+
+        // 스크립트 생성 API 호출
+        const res = await postJSON("/api/generate", {
+          topic,
+          analysis: templateAnalysis,
+          tone: "default",
+          style: "default",
+          audience: "",
+          category: pageSelectedCategory.name,
+          template: pageSelectedTemplate.name
+        });
+
+        // 결과 표시
+        const resultSection = el("templateResult");
+        const scriptBox = el("templateScriptBox");
+
+        if (scriptBox) {
+          // 스크립트 포맷팅
+          const escapeHTML = (str) => str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+          let safe = escapeHTML(res.script || "").replace(/\n\n+/g, "\n\n");
+          safe = safe.replace(/\[(\d{2}:\d{2}[^\]]*?)\]/g, '<span style="color:var(--warning); font-weight:bold;">⏱ $1</span>');
+          safe = safe.replace(/\[HOOK\]/gi, '<span style="color:var(--hook-color); font-weight:bold;">🎣 [HOOK]</span>');
+          safe = safe.replace(/\[BODY\]/gi, '<span style="color:var(--body-color); font-weight:bold;">📖 [BODY]</span>');
+          safe = safe.replace(/\[CTA\]/gi, '<span style="color:var(--cta-color); font-weight:bold;">📢 [CTA]</span>');
+          scriptBox.innerHTML = safe.split("\n").join("<br>");
+        }
+
+        if (resultSection) {
+          resultSection.classList.remove("hidden");
+          setTimeout(() => {
+            resultSection.scrollIntoView({ behavior: "smooth", block: "start" });
+          }, 100);
+        }
+
+        showToast("스크립트가 생성되었습니다! ✨");
+
+      } catch (e) {
+        showToast(`생성 실패: ${e.message}`);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+      }
+    };
+  }
+
+  // 템플릿 결과 복사
+  const copyTemplateScriptBtn = el("copyTemplateScript");
+  if (copyTemplateScriptBtn) {
+    copyTemplateScriptBtn.onclick = async () => {
+      const text = el("templateScriptBox").innerText;
+      if (!text) return;
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast("클립보드에 복사되었습니다! 📋");
+      } catch (e) {
+        showToast("복사 실패");
+      }
+    };
+  }
+
+  // 템플릿 결과 다운로드
+  const downloadTemplateScriptBtn = el("downloadTemplateScript");
+  if (downloadTemplateScriptBtn) {
+    downloadTemplateScriptBtn.onclick = () => {
+      const text = el("templateScriptBox").innerText;
+      if (!text) return showToast("다운로드할 스크립트가 없습니다.");
+
+      const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `script_template.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      showToast("스크립트가 다운로드되었습니다.");
+    };
+  }
+
+  // 템플릿 결과 다시 생성
+  const regenerateTemplateScriptBtn = el("regenerateTemplateScript");
+  if (regenerateTemplateScriptBtn) {
+    regenerateTemplateScriptBtn.onclick = () => {
+      generateFromTemplatePageBtn.click();
+    };
   }
 
   // Initialize
