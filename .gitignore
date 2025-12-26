@@ -8,5 +8,4 @@ build/
 *.spec
 nul
 debug_log.txt
-.claude/
 data/
