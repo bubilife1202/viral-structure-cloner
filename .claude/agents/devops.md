@@ -4,6 +4,39 @@
 
 ---
 
+## 🔴 배포 프로세스 (코드 변경 후 필수)
+
+### 1. 코드 변경 완료 시
+```powershell
+# 1) Git 커밋 & 푸시
+git add -A
+git commit -m "메시지"
+git push origin main
+
+# 2) Production 서버 재시작 (8000번 포트)
+# 기존 프로세스 종료
+powershell -Command "Get-Process -Id (Get-NetTCPConnection -LocalPort 8000).OwningProcess | Stop-Process -Force"
+
+# 서버 재시작 (viral-structure-cloner 폴더에서)
+cd d:\code\claude_code\viral-structure-cloner
+python -m uvicorn application:app --host 0.0.0.0 --port 8000
+```
+
+### 2. Cloudflare 터널 (이미 실행 중이면 건드리지 않음)
+```powershell
+# 터널 상태 확인
+cloudflared tunnel list
+
+# 터널 실행 (필요한 경우만)
+cloudflared tunnel run viral-cloner
+```
+
+### 3. 배포 확인
+- https://viral-cloner.터널도메인 접속해서 변경사항 확인
+- 안 되면 Ctrl+Shift+R (하드 리프레시)
+
+---
+
 ## Role
 - Git 버전 관리
 - 서버 배포 및 모니터링
@@ -13,17 +46,18 @@
 
 ## Infrastructure
 ```
-Local Server:
-- uvicorn application:app --port 8000
-- cloudflared tunnel --url http://localhost:8000 run viral-cloner
+Production Server (Port 8000):
+- python -m uvicorn application:app --host 0.0.0.0 --port 8000
+- Cloudflare tunnel 연결됨
 
-Domain: viral-cloner 터널 (Cloudflare)
+Development Server (Port 8080):
+- python -m uvicorn application:app --host 0.0.0.0 --port 8080 --reload
+- 로컬 개발용 (자동 리로드)
 ```
 
 ## Git Workflow
 ```bash
-# 현재 브랜치
-main
+# 현재 브랜치: main
 
 # 커밋 컨벤션
 feat: 새 기능
@@ -32,12 +66,6 @@ refactor: 리팩토링
 style: CSS/UI 변경
 docs: 문서 변경
 ```
-
-## Files I Touch
-- `.gitignore`
-- `requirements.txt`
-- `.env`
-- 서버 프로세스 관리
 
 ## Rollback Procedure
 ```bash
@@ -48,17 +76,11 @@ git reset --hard <commit>  # 롤백
 
 ---
 
-## Current Tasks
-<!-- PM이 할당한 태스크 -->
-
 ## Server Status
-- Port 8000: Production (cloudflared)
-- Port 8080: Development (--reload)
+- **Port 8000**: Production (Cloudflare 터널)
+- **Port 8080**: Development (--reload)
 
 ## Notes
-<!-- 작업하면서 발견한 것들 -->
 - data/ 폴더는 gitignore 처리됨
-- .env에 GEMINI_API_KEY 필요
-
-## Questions for Other Agents
-<!-- 다른 에이전트에게 질문 -->
+- .env에 GEMINI_API_KEY, GOOGLE_API_KEY 필요
+- 코드 변경 후 반드시 서버 재시작해야 반영됨
