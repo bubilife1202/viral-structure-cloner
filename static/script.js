@@ -1623,8 +1623,18 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
+  // YouTube OEmbed로 영상 유효성 검증
+  const checkVideoExists = async (videoId) => {
+    try {
+      const res = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`);
+      return res.ok;
+    } catch {
+      return false;
+    }
+  };
+
   // 영상 카드 렌더링
-  const renderExploreVideoGrid = (videos) => {
+  const renderExploreVideoGrid = async (videos) => {
     const videoGrid = el("exploreVideoGrid");
     if (!videoGrid) return;
 
@@ -1638,11 +1648,39 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    videoGrid.innerHTML = videos.map(video => {
+    // 모든 영상의 유효성을 병렬로 검증
+    const validityChecks = await Promise.all(
+      videos.map(async (video) => {
+        const videoId = extractVideoIdFromUrl(video.url);
+        if (!videoId) return { video, valid: false };
+        const valid = await checkVideoExists(videoId);
+        return { video, valid };
+      })
+    );
+
+    // 유효한 영상만 필터링
+    const validVideos = validityChecks.filter(v => v.valid).map(v => v.video);
+
+    if (validVideos.length === 0) {
+      videoGrid.innerHTML = `
+        <div class="empty-state">
+          <span class="empty-icon">📹</span>
+          <p>이 카테고리에서 인기 영상을 찾지 못했습니다.</p>
+        </div>
+      `;
+      return;
+    }
+
+    // 영상 개수 업데이트
+    const videoCount = el("exploreVideoCount");
+    if (videoCount) {
+      videoCount.innerText = `${validVideos.length}개 영상`;
+    }
+
+    videoGrid.innerHTML = validVideos.map(video => {
       const videoId = extractVideoIdFromUrl(video.url);
-      // sddefault.jpg는 삭제된 영상에서 404를 반환하는 경우가 많음
       const thumbnailUrl = videoId
-        ? `https://img.youtube.com/vi/${videoId}/sddefault.jpg`
+        ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
         : "";
       const duration = video.duration || "0:00";
       const viralRatio = video.viral_ratio || 0;
@@ -1657,7 +1695,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return `
         <div class="video-card" data-video-url="${video.url}">
           <div class="video-thumbnail">
-            <img src="${thumbnailUrl}" alt="${video.title || ''}" onerror="this.closest('.video-card').style.display='none'" onload="if(this.naturalWidth<200||this.naturalHeight<100)this.closest('.video-card').style.display='none'">
+            <img src="${thumbnailUrl}" alt="${video.title || ''}">
             ${viralBadge}
             <span class="video-duration">${duration}</span>
           </div>
