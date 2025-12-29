@@ -23,7 +23,7 @@ Domain: viral-cloner 터널 (Cloudflare)
 ## Git Workflow
 ```bash
 # 현재 브랜치
-claude/viral-structure-cloner-015d2gz6FRQni4Na2KGKhoFk
+main
 
 # 커밋 컨벤션
 feat: 새 기능

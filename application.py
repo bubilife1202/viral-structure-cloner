@@ -369,6 +369,31 @@ def remove_whitelist(ip: str):
     return {"success": True, "ip": ip.strip()}
 
 
+@app.get("/api/popular-videos")
+def api_popular_videos(category: str = ""):
+    """카테고리별 인기 영상 목록 반환"""
+    popular_videos_file = DATA_DIR / "popular_videos.json"
+
+    # 파일이 없으면 빈 배열 반환
+    if not popular_videos_file.exists():
+        return {"videos": []}
+
+    try:
+        with open(popular_videos_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        # 카테고리가 지정된 경우 해당 카테고리 영상만 반환
+        # JSON 구조: {"updated_at": "...", "categories": {"health": [...], ...}}
+        if category:
+            videos = data.get("categories", {}).get(category, [])
+        else:
+            videos = []
+
+        return {"videos": videos}
+    except (json.JSONDecodeError, IOError):
+        return {"videos": []}
+
+
 @app.get("/admin")
 def admin_page(pw: str = ""):
     """관리자 페이지 (비밀번호 필요)"""

@@ -121,13 +121,17 @@ const clearLoadingTimers = () => {
 };
 
 // Loading Overlay with time-based messages
+// Whisper 음성인식 사용 시 30초~2분 소요될 수 있음
 const loadingMessages = [
   { delay: 0, title: "영상 분석 중...", subtitle: "영상 구조를 파악하고 있어요" },
   { delay: 3000, title: "자막 추출 중...", subtitle: "AI가 대본을 읽고 있어요" },
   { delay: 6000, title: "패턴 분석 중...", subtitle: "바이럴 구조를 분석하고 있어요" },
-  { delay: 10000, title: "거의 다 됐어요!", subtitle: "마무리 작업 중이에요", showTip: true, tip: "조금만 기다려주세요~" },
-  { delay: 20000, title: "조금만 더요...", subtitle: "곧 완료됩니다", showTip: true, tip: "잠시만요!" },
-  { delay: 35000, title: "열심히 분석 중...", subtitle: "복잡한 영상이네요", showTip: true, tip: "곧 완료됩니다!" }
+  { delay: 12000, title: "조금만 기다려주세요", subtitle: "분석 마무리 중이에요", showTip: true, tip: "거의 다 됐어요!" },
+  { delay: 20000, title: "음성 인식 중...", subtitle: "자막이 없어서 AI가 음성을 분석해요", showTip: true, tip: "자막 없는 영상은 시간이 조금 더 걸려요" },
+  { delay: 35000, title: "열심히 듣고 있어요", subtitle: "음성을 텍스트로 변환 중", showTip: true, tip: "30초~1분 정도 소요돼요" },
+  { delay: 50000, title: "거의 완료!", subtitle: "마지막 처리 중이에요", showTip: true, tip: "조금만 더 기다려주세요~" },
+  { delay: 70000, title: "복잡한 영상이네요", subtitle: "음성 분석에 시간이 걸리고 있어요", showTip: true, tip: "긴 영상은 시간이 더 필요해요" },
+  { delay: 90000, title: "곧 끝나요!", subtitle: "결과를 정리하고 있어요", showTip: true, tip: "잠시만요!" }
 ];
 
 const showLoadingOverlay = () => {
@@ -796,27 +800,89 @@ document.addEventListener("DOMContentLoaded", () => {
   const mainWorkspace = el('mainWorkspace');
   const templateWorkspace = el('templateWorkspace');
 
-  const showWorkspace = () => {
+  // ========================================
+  // History API - 브라우저 뒤로가기 지원
+  // ========================================
+  const navigateTo = (page, subPage = null, addToHistory = true) => {
+    // 모든 워크스페이스 숨기기
     if (selectionSection) selectionSection.classList.add('hidden');
+    if (mainWorkspace) mainWorkspace.classList.add('hidden');
     if (templateWorkspace) templateWorkspace.classList.add('hidden');
-    if (mainWorkspace) mainWorkspace.classList.remove('hidden');
+    const exploreWs = el('exploreWorkspace');
+    if (exploreWs) exploreWs.classList.add('hidden');
+
+    // 해당 페이지 표시
+    switch (page) {
+      case 'selection':
+        if (selectionSection) selectionSection.classList.remove('hidden');
+        break;
+      case 'analyze':
+        if (mainWorkspace) mainWorkspace.classList.remove('hidden');
+        break;
+      case 'template':
+        if (templateWorkspace) templateWorkspace.classList.remove('hidden');
+        renderCategoryGridPage();
+        if (subPage === 'category') {
+          resetTemplateSteps();
+        }
+        break;
+      case 'explore':
+        if (exploreWs) exploreWs.classList.remove('hidden');
+        if (subPage === 'category') {
+          renderExploreCategoryGrid();
+          resetExploreSteps();
+        } else if (subPage === 'videos') {
+          // 영상 목록은 이미 표시된 상태 유지
+        }
+        break;
+    }
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // History에 추가
+    if (addToHistory) {
+      const state = { page, subPage };
+      history.pushState(state, '', `#${page}${subPage ? '/' + subPage : ''}`);
+    }
+  };
+
+  // 브라우저 뒤로가기/앞으로가기 처리
+  window.addEventListener('popstate', (event) => {
+    if (event.state && event.state.page) {
+      // explore 페이지의 서브페이지 처리
+      if (event.state.page === 'explore') {
+        if (event.state.subPage === 'category') {
+          // 카테고리 선택 화면으로
+          navigateTo('explore', 'category', false);
+          if (window._showExploreCategoryStep) {
+            window._showExploreCategoryStep();
+          }
+        } else if (event.state.subPage === 'videos') {
+          // 영상 목록 (이미 로드된 상태 유지)
+          navigateTo('explore', 'videos', false);
+        }
+      } else {
+        navigateTo(event.state.page, event.state.subPage, false);
+      }
+    } else {
+      // 초기 상태 (히스토리 없음) -> 선택 화면
+      navigateTo('selection', null, false);
+    }
+  });
+
+  // 초기 히스토리 상태 설정
+  history.replaceState({ page: 'selection' }, '', '#selection');
+
+  const showWorkspace = () => {
+    navigateTo('analyze');
   };
 
   const showTemplateWorkspace = () => {
-    if (selectionSection) selectionSection.classList.add('hidden');
-    if (mainWorkspace) mainWorkspace.classList.add('hidden');
-    if (templateWorkspace) templateWorkspace.classList.remove('hidden');
-    renderCategoryGridPage();
-    resetTemplateSteps();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    navigateTo('template', 'category');
   };
 
   const showSelection = () => {
-    if (selectionSection) selectionSection.classList.remove('hidden');
-    if (mainWorkspace) mainWorkspace.classList.add('hidden');
-    if (templateWorkspace) templateWorkspace.classList.add('hidden');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    navigateTo('selection');
   };
 
   // Card 1: URL 분석
@@ -839,12 +905,18 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
-  // Card 3: 영상 탐색 (준비중)
+  // Card 3: 인기 영상 탐색
   const selectExplore = el('selectExplore');
+  const exploreWorkspace = el('exploreWorkspace');
+
+  const showExploreWorkspace = () => {
+    navigateTo('explore', 'category');
+  };
+
   if (selectExplore) {
-    selectExplore.classList.add('disabled');
+    selectExplore.classList.remove('disabled');
     selectExplore.onclick = () => {
-      showToast('영상 탐색 기능은 준비 중입니다.');
+      showExploreWorkspace();
     };
   }
 
@@ -1091,39 +1163,18 @@ document.addEventListener("DOMContentLoaded", () => {
   // 카테고리 기반 스크립트 생성
   // ========================================
 
-  // 카테고리 데이터
+  // 카테고리 데이터 (10개 통일)
   const CATEGORIES = [
-    { id: "health", icon: "💪", name: "건강/운동" },
-    { id: "beauty", icon: "💄", name: "뷰티/화장품" },
-    { id: "food", icon: "🍳", name: "요리/맛집" },
-    { id: "finance", icon: "💰", name: "재테크/투자" },
-    { id: "business", icon: "💼", name: "창업/부업" },
-    { id: "study", icon: "📚", name: "공부/자기계발" },
-    { id: "tech", icon: "💻", name: "IT/테크" },
-    { id: "game", icon: "🎮", name: "게임" },
-    { id: "travel", icon: "✈️", name: "여행" },
-    { id: "pet", icon: "🐕", name: "반려동물" },
-    { id: "parenting", icon: "👶", name: "육아/교육" },
-    { id: "relationship", icon: "💑", name: "연애/결혼" },
-    { id: "psychology", icon: "🧠", name: "심리/힐링" },
-    { id: "fashion", icon: "👗", name: "패션" },
-    { id: "interior", icon: "🏠", name: "인테리어" },
-    { id: "car", icon: "🚗", name: "자동차" },
-    { id: "hobby", icon: "🎨", name: "취미/DIY" },
-    { id: "music", icon: "🎵", name: "음악" },
-    { id: "movie", icon: "🎬", name: "영화/드라마" },
-    { id: "book", icon: "📖", name: "독서/서평" },
-    { id: "news", icon: "📰", name: "시사/뉴스" },
-    { id: "science", icon: "🔬", name: "과학/상식" },
-    { id: "history", icon: "🏛️", name: "역사" },
-    { id: "language", icon: "🌏", name: "외국어" },
-    { id: "job", icon: "👔", name: "취업/이직" },
-    { id: "legal", icon: "⚖️", name: "법률/부동산" },
-    { id: "crypto", icon: "₿", name: "코인/NFT" },
-    { id: "asmr", icon: "🎧", name: "ASMR/브이로그" },
-    { id: "comedy", icon: "😂", name: "유머/예능" },
-    { id: "sports", icon: "⚽", name: "스포츠" },
-    { id: "yadam", icon: "👻", name: "야담/괴담" }
+    { id: "health", icon: "🏃", name: "건강/운동", query: "건강 쇼츠" },
+    { id: "finance", icon: "💰", name: "재테크/투자", query: "재테크 쇼츠" },
+    { id: "food", icon: "🍳", name: "요리/맛집", query: "요리 레시피 쇼츠" },
+    { id: "tech", icon: "💻", name: "IT/테크", query: "IT 쇼츠" },
+    { id: "selfdev", icon: "📚", name: "자기계발", query: "자기계발 쇼츠" },
+    { id: "beauty", icon: "💄", name: "뷰티/화장품", query: "뷰티 쇼츠" },
+    { id: "travel", icon: "✈️", name: "여행", query: "여행 쇼츠" },
+    { id: "game", icon: "🎮", name: "게임", query: "게임 쇼츠" },
+    { id: "pet", icon: "🐶", name: "반려동물", query: "반려동물 쇼츠" },
+    { id: "humor", icon: "😂", name: "유머/예능", query: "유머 쇼츠" }
   ];
 
   // 구조 템플릿 데이터
@@ -1383,4 +1434,257 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     };
   }
+
+  // ========================================
+  // 인기 영상 탐색 (exploreWorkspace) 기능
+  // ========================================
+
+  let exploreSelectedCategory = null;
+
+  // 탐색 Step 초기화
+  const resetExploreSteps = () => {
+    exploreSelectedCategory = null;
+    const step1 = el("exploreStep1");
+    const step2 = el("exploreStep2");
+    if (step1) step1.classList.remove("hidden");
+    if (step2) step2.classList.add("hidden");
+  };
+
+  // 카테고리 그리드 렌더링 (탐색용)
+  const renderExploreCategoryGrid = () => {
+    const grid = el("exploreCategoryGrid");
+    if (!grid) return;
+
+    grid.innerHTML = CATEGORIES.map(cat => `
+      <div class="category-card-page" data-cat-id="${cat.id}">
+        <span class="cat-icon-large">${cat.icon}</span>
+        <span class="cat-name">${cat.name}</span>
+      </div>
+    `).join("");
+
+    // 클릭 이벤트
+    grid.querySelectorAll(".category-card-page").forEach(item => {
+      item.onclick = () => {
+        exploreSelectedCategory = CATEGORIES.find(c => c.id === item.dataset.catId);
+        showExploreVideoStep();
+      };
+    });
+  };
+
+  // 영상 목록 Step으로 이동
+  const showExploreVideoStep = async (addToHistory = true) => {
+    const step1 = el("exploreStep1");
+    const step2 = el("exploreStep2");
+    const categoryBadge = el("exploreCategoryBadge");
+    const videoCount = el("exploreVideoCount");
+    const videoGrid = el("exploreVideoGrid");
+
+    if (step1) step1.classList.add("hidden");
+    if (step2) step2.classList.remove("hidden");
+
+    // 카테고리 뱃지 표시
+    if (categoryBadge && exploreSelectedCategory) {
+      categoryBadge.innerText = `${exploreSelectedCategory.icon} ${exploreSelectedCategory.name}`;
+    }
+
+    // 로딩 상태 표시
+    if (videoGrid) {
+      videoGrid.innerHTML = `
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <p>인기 영상을 불러오는 중...</p>
+        </div>
+      `;
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // History에 추가
+    if (addToHistory) {
+      history.pushState({ page: 'explore', subPage: 'videos', categoryId: exploreSelectedCategory?.id }, '', '#explore/videos');
+    }
+
+    // API 호출
+    try {
+      const response = await fetch(`/api/popular-videos?category=${encodeURIComponent(exploreSelectedCategory.id)}`);
+      if (!response.ok) {
+        throw new Error("영상 목록을 불러올 수 없습니다.");
+      }
+      const data = await response.json();
+      const videos = data.videos || [];
+
+      // 영상 개수 표시
+      if (videoCount) {
+        videoCount.innerText = `${videos.length}개 영상`;
+      }
+
+      // 영상 그리드 렌더링
+      renderExploreVideoGrid(videos);
+
+    } catch (e) {
+      if (videoGrid) {
+        videoGrid.innerHTML = `
+          <div class="empty-state">
+            <span class="empty-icon">😢</span>
+            <p>${e.message}</p>
+          </div>
+        `;
+      }
+      if (videoCount) {
+        videoCount.innerText = "0개 영상";
+      }
+    }
+  };
+
+  // 영상 카드 렌더링
+  const renderExploreVideoGrid = (videos) => {
+    const videoGrid = el("exploreVideoGrid");
+    if (!videoGrid) return;
+
+    if (!videos || videos.length === 0) {
+      videoGrid.innerHTML = `
+        <div class="empty-state">
+          <span class="empty-icon">📹</span>
+          <p>이 카테고리에서 인기 영상을 찾지 못했습니다.</p>
+        </div>
+      `;
+      return;
+    }
+
+    videoGrid.innerHTML = videos.map(video => {
+      const videoId = extractVideoIdFromUrl(video.url);
+      const thumbnailUrl = videoId
+        ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+        : "";
+      const duration = video.duration || "0:00";
+      const viralRatio = video.viral_ratio || 0;
+      const subscribers = video.subscribers || "";
+      const uploadedAt = video.uploaded_at || "";
+
+      // 바이럴 뱃지 (2배 이상이면 표시)
+      const viralBadge = viralRatio >= 2
+        ? `<span class="viral-badge">🔥 ${viralRatio}배</span>`
+        : "";
+
+      return `
+        <div class="video-card" data-video-url="${video.url}">
+          <div class="video-thumbnail">
+            <img src="${thumbnailUrl}" alt="${video.title || ''}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 9%22><rect fill=%22%23333%22 width=%2216%22 height=%229%22/></svg>'">
+            ${viralBadge}
+            <span class="video-duration">${duration}</span>
+          </div>
+          <div class="video-info">
+            <h4 class="video-title">${video.title || "제목 없음"}</h4>
+            <div class="video-meta">
+              <span class="video-channel">${video.channel || "채널명"}${subscribers ? ` · 구독자 ${subscribers}` : ""}</span>
+            </div>
+            <div class="video-stats-row">
+              <span>조회수 ${video.views || "0"}</span>
+              ${uploadedAt ? `<span>· ${uploadedAt}</span>` : ""}
+            </div>
+            <div class="video-action-buttons">
+              <button class="video-action-btn primary">🎯 구조 분석</button>
+              <a href="${video.url}" target="_blank" rel="noopener" class="video-action-btn secondary">▶ 원본 보기</a>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    // "구조 분석" 버튼 클릭 이벤트
+    videoGrid.querySelectorAll(".video-action-btn.primary").forEach(btn => {
+      btn.onclick = (e) => {
+        const card = e.target.closest(".video-card");
+        if (!card) return;
+        const videoUrl = card.dataset.videoUrl;
+        if (videoUrl) {
+          goToAnalyzeWithUrl(videoUrl);
+        }
+      };
+    });
+  };
+
+  // URL에서 Video ID 추출 (탐색용)
+  const extractVideoIdFromUrl = (url) => {
+    if (!url) return null;
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
+      /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/
+    ];
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match) return match[1];
+    }
+    return null;
+  };
+
+  // 조회수 포맷팅
+  const formatViewCount = (count) => {
+    if (!count) return "0";
+    const num = Number(count);
+    if (num >= 100000000) {
+      return (num / 100000000).toFixed(1) + "억";
+    } else if (num >= 10000) {
+      return (num / 10000).toFixed(1) + "만";
+    } else if (num >= 1000) {
+      return (num / 1000).toFixed(1) + "천";
+    }
+    return num.toString();
+  };
+
+  // mainWorkspace로 이동 + URL 자동 입력
+  const goToAnalyzeWithUrl = (videoUrl) => {
+    // exploreWorkspace 숨기기
+    const exploreWs = el("exploreWorkspace");
+    if (exploreWs) exploreWs.classList.add("hidden");
+
+    // selectionSection 숨기기
+    if (selectionSection) selectionSection.classList.add("hidden");
+
+    // mainWorkspace 표시
+    if (mainWorkspace) mainWorkspace.classList.remove("hidden");
+
+    // URL 입력란에 자동 입력
+    const urlInput = el("urlInput");
+    if (urlInput) {
+      urlInput.value = videoUrl;
+      // 썸네일 미리보기 트리거
+      urlInput.dispatchEvent(new Event("input"));
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // 입력란 포커스
+    setTimeout(() => {
+      if (urlInput) urlInput.focus();
+    }, 300);
+
+    showToast("URL이 입력되었습니다. 분석하기 버튼을 클릭하세요.");
+  };
+
+  // 탐색 뒤로가기 (-> 선택 화면)
+  const backFromExploreBtn = el("backFromExplore");
+  if (backFromExploreBtn) {
+    backFromExploreBtn.onclick = () => {
+      history.back();
+    };
+  }
+
+  // Step2에서 Step1로 뒤로가기 (카테고리 다시 선택)
+  window.backToExploreCategoriesPage = () => {
+    history.back();
+  };
+
+  // 내부 탐색 스텝 전환 (히스토리 없이)
+  const showExploreCategoryStep = () => {
+    exploreSelectedCategory = null;
+    const step1 = el("exploreStep1");
+    const step2 = el("exploreStep2");
+    if (step1) step1.classList.remove("hidden");
+    if (step2) step2.classList.add("hidden");
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // popstate에서 explore 서브페이지 처리를 위해 전역 노출
+  window._showExploreCategoryStep = showExploreCategoryStep;
 });
