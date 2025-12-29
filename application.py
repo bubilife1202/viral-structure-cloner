@@ -559,12 +559,12 @@ def admin_page(pw: str = ""):
         </div>
 
         <div class="section">
-            <div class="section-title">🔑 무제한 사용 키</div>
+            <div class="section-title">🔑 내 계정 무제한 활성화</div>
             <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
-                <input type="text" id="adminKeyDisplay" value="" readonly style="flex:1; background:#2d3748; color:#4ade80; font-family:monospace;">
-                <button onclick="copyAdminKey()">복사</button>
+                <span id="myIpDisplay" style="color:#60a5fa;">내 IP: 확인 중...</span>
+                <button onclick="activateMyIp()" style="background:#10b981;">✅ 무제한 활성화</button>
             </div>
-            <div class="log-entry" style="color:#fbbf24;">이 키를 사용자에게 공유하면 무제한 사용 가능</div>
+            <div id="myIpStatus" class="log-entry" style="color:#fbbf24;"></div>
         </div>
 
         <div class="section">
@@ -648,16 +648,35 @@ def admin_page(pw: str = ""):
             fetchStats();
         }
 
-        function copyAdminKey() {
-            const input = document.getElementById('adminKeyDisplay');
-            input.select();
-            document.execCommand('copy');
-            alert('키가 복사되었습니다!');
+        async function checkMyIp() {
+            try {
+                const res = await fetch('/api/check-admin');
+                const data = await res.json();
+                document.getElementById('myIpDisplay').textContent = '내 IP: ' + data.ip;
+                if (data.is_admin) {
+                    document.getElementById('myIpStatus').textContent = '✅ 이미 무제한 활성화됨';
+                    document.getElementById('myIpStatus').style.color = '#4ade80';
+                }
+            } catch (e) {
+                console.error(e);
+            }
         }
 
-        // 관리자 키 표시
-        document.getElementById('adminKeyDisplay').value = '""" + ADMIN_PASSWORD + """';
+        async function activateMyIp() {
+            try {
+                const res = await fetch('/api/check-admin');
+                const data = await res.json();
+                await fetch('/admin/whitelist/add?ip=' + encodeURIComponent(data.ip));
+                document.getElementById('myIpStatus').textContent = '✅ 무제한 활성화 완료!';
+                document.getElementById('myIpStatus').style.color = '#4ade80';
+                fetchStats();
+            } catch (e) {
+                document.getElementById('myIpStatus').textContent = '❌ 오류 발생';
+                document.getElementById('myIpStatus').style.color = '#f87171';
+            }
+        }
 
+        checkMyIp();
         fetchStats();
         setInterval(fetchStats, 3000);
     </script>
