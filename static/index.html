@@ -17,6 +17,7 @@
         <span>YouTube Pattern Benchmark</span>
       </a>
       <div class="flex-row">
+        <button id="adminKeyBtn" class="ghost" style="font-size:1.2rem;" title="관리자 키 입력">🔑</button>
         <button id="themeToggle" class="ghost" style="font-size:1.2rem;">🌙</button>
       </div>
     </div>
@@ -408,6 +409,25 @@
       </div>
     </div>
   </main>
+
+  <!-- Admin Key Modal -->
+  <div id="adminKeyModal" class="modal-overlay">
+    <div class="modal" style="max-width: 360px;">
+      <div class="modal-header">
+        <h3>🔑 관리자 키 입력</h3>
+        <button class="ghost" onclick="closeAdminKeyModal()">✕</button>
+      </div>
+      <div class="input-group">
+        <label>무제한 사용 키</label>
+        <input type="password" id="adminKeyInput" placeholder="키를 입력하세요">
+      </div>
+      <div class="flex-row" style="justify-content:flex-end; margin-top:1rem; gap:0.5rem;">
+        <button class="ghost" onclick="closeAdminKeyModal()">취소</button>
+        <button id="activateAdminBtn" class="primary">활성화</button>
+      </div>
+      <p id="adminKeyStatus" style="margin-top:0.75rem; font-size:0.85rem; color:var(--text-muted);"></p>
+    </div>
+  </div>
 
   <!-- Edit Pattern Modal -->
   <div id="editPatternModal" class="modal-overlay">

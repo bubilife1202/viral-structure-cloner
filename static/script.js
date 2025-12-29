@@ -669,6 +669,93 @@ document.addEventListener("DOMContentLoaded", () => {
 
   el("savePatternBtn").onclick = saveEditedPattern;
 
+  // Admin Key Modal
+  let isAdminMode = false;
+
+  window.openAdminKeyModal = () => {
+    el("adminKeyModal").classList.add("show");
+    el("adminKeyInput").value = "";
+    el("adminKeyStatus").innerText = "";
+    el("adminKeyInput").focus();
+  };
+
+  window.closeAdminKeyModal = () => {
+    el("adminKeyModal").classList.remove("show");
+  };
+
+  const checkAdminStatus = async () => {
+    try {
+      const res = await fetch("/api/check-admin");
+      const data = await res.json();
+      isAdminMode = data.is_admin;
+      updateAdminUI();
+    } catch (e) {
+      console.log("Admin check failed:", e);
+    }
+  };
+
+  const updateAdminUI = () => {
+    const adminBtn = el("adminKeyBtn");
+    const selectionHint = document.querySelector(".selection-hint");
+
+    if (isAdminMode) {
+      adminBtn.innerText = "✅";
+      adminBtn.title = "무제한 사용 활성화됨";
+      if (selectionHint) {
+        selectionHint.innerText = "✅ 무제한 사용 활성화됨";
+        selectionHint.style.color = "var(--success)";
+      }
+    } else {
+      adminBtn.innerText = "🔑";
+      adminBtn.title = "관리자 키 입력";
+    }
+  };
+
+  const activateAdmin = async () => {
+    const key = el("adminKeyInput").value.trim();
+    const statusEl = el("adminKeyStatus");
+
+    if (!key) {
+      statusEl.innerText = "키를 입력해주세요.";
+      statusEl.style.color = "var(--error)";
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/activate-admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        isAdminMode = true;
+        updateAdminUI();
+        statusEl.innerText = data.message;
+        statusEl.style.color = "var(--success)";
+        showToast("🎉 무제한 사용이 활성화되었습니다!");
+        setTimeout(closeAdminKeyModal, 1500);
+      } else {
+        const err = await res.json();
+        statusEl.innerText = err.detail || "잘못된 키입니다.";
+        statusEl.style.color = "var(--error)";
+      }
+    } catch (e) {
+      statusEl.innerText = "오류가 발생했습니다.";
+      statusEl.style.color = "var(--error)";
+    }
+  };
+
+  el("adminKeyBtn").onclick = openAdminKeyModal;
+  el("activateAdminBtn").onclick = activateAdmin;
+  el("adminKeyInput").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") activateAdmin();
+  });
+
+  // Check admin status on page load
+  checkAdminStatus();
+
   // Analyze
   el("analyzeBtn").onclick = async () => {
     const url = el("urlInput").value.trim();

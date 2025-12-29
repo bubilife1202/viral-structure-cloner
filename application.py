@@ -344,6 +344,30 @@ def api_stats():
     }
 
 
+class AdminKeyRequest(BaseModel):
+    key: str
+
+
+@app.post("/api/activate-admin")
+def api_activate_admin(payload: AdminKeyRequest, request: Request):
+    """관리자 키로 무제한 사용 활성화"""
+    client_ip = get_client_ip(request)
+
+    if payload.key == ADMIN_PASSWORD:
+        WHITELIST_IPS.add(client_ip)
+        return {"success": True, "message": "무제한 사용이 활성화되었습니다.", "ip": client_ip}
+    else:
+        raise HTTPException(status_code=403, detail="잘못된 키입니다.")
+
+
+@app.get("/api/check-admin")
+def api_check_admin(request: Request):
+    """현재 IP가 관리자/화이트리스트인지 확인"""
+    client_ip = get_client_ip(request)
+    is_admin = client_ip in ADMIN_IPS or client_ip in WHITELIST_IPS
+    return {"is_admin": is_admin, "ip": client_ip}
+
+
 @app.get("/admin/whitelist/add")
 def add_whitelist(ip: str):
     """화이트리스트에 IP 추가"""
