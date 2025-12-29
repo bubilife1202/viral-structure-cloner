@@ -1640,8 +1640,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     videoGrid.innerHTML = videos.map(video => {
       const videoId = extractVideoIdFromUrl(video.url);
+      // sddefault.jpg는 삭제된 영상에서 404를 반환하는 경우가 많음
       const thumbnailUrl = videoId
-        ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+        ? `https://img.youtube.com/vi/${videoId}/sddefault.jpg`
         : "";
       const duration = video.duration || "0:00";
       const viralRatio = video.viral_ratio || 0;
@@ -1656,7 +1657,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return `
         <div class="video-card" data-video-url="${video.url}">
           <div class="video-thumbnail">
-            <img src="${thumbnailUrl}" alt="${video.title || ''}" onerror="this.closest('.video-card').style.display='none'">
+            <img src="${thumbnailUrl}" alt="${video.title || ''}" onerror="this.closest('.video-card').style.display='none'" onload="if(this.naturalWidth<200||this.naturalHeight<100)this.closest('.video-card').style.display='none'">
             ${viralBadge}
             <span class="video-duration">${duration}</span>
           </div>
