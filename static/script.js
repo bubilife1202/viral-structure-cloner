@@ -1656,7 +1656,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return `
         <div class="video-card" data-video-url="${video.url}">
           <div class="video-thumbnail">
-            <img src="${thumbnailUrl}" alt="${video.title || ''}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 9%22><rect fill=%22%23333%22 width=%2216%22 height=%229%22/></svg>'">
+            <img src="${thumbnailUrl}" alt="${video.title || ''}" onerror="this.closest('.video-card').style.display='none'">
             ${viralBadge}
             <span class="video-duration">${duration}</span>
           </div>
