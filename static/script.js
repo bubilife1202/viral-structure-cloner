@@ -1,3 +1,16 @@
+// 로컬 환경 감지 (127.0.0.1, localhost)
+const isLocalEnvironment = ['127.0.0.1', 'localhost'].includes(window.location.hostname);
+
+// 로컬 환경에서 플로팅 버튼 숨기기
+if (isLocalEnvironment) {
+  document.addEventListener('DOMContentLoaded', () => {
+    const floatingBtn = document.getElementById('floatingUnlimitedBtn');
+    if (floatingBtn) {
+      floatingBtn.classList.add('hidden-local');
+    }
+  });
+}
+
 // 세션 ID 생성 및 heartbeat
 const SESSION_ID = 'user_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
 

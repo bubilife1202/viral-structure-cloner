@@ -492,15 +492,61 @@
     </div>
   </footer>
 
-  <!-- 플로팅 카카오톡 문의 버튼 -->
-  <a href="https://litt.ly/reels_code_official/sale/XdbLaGW" target="_blank" rel="noopener noreferrer" class="floating-btn" title="평생 소장 문의">
-    <span class="floating-btn-text">평생 소장 문의</span>
-    <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28">
-      <path d="M12 3C6.48 3 2 6.58 2 11c0 2.83 1.82 5.31 4.56 6.72-.14.52-.91 3.36-.94 3.58 0 0-.02.17.09.24.1.06.23.03.23.03.31-.04 3.6-2.35 4.17-2.75.62.09 1.25.13 1.89.13 5.52 0 10-3.58 10-8s-4.48-8-10-8z"/>
-    </svg>
+  <!-- 플로팅 무제한 사용 버튼 (웹 전용, 로컬에서는 숨김) -->
+  <a href="https://kmong.com/gig/729141" target="_blank" rel="noopener noreferrer" class="floating-btn" id="floatingUnlimitedBtn" title="무제한 사용">
+    <span class="floating-btn-icon">&#x221E;</span>
+    <span class="floating-btn-text">무제한 사용</span>
   </a>
 
-<style>    .floating-btn {      position: fixed;      bottom: 24px;      right: 24px;      height: 52px;      padding: 0 20px 0 16px;      background: #FEE500;      border-radius: 26px;      display: flex;      align-items: center;      justify-content: center;      gap: 10px;      color: #3C1E1E;      box-shadow: 0 4px 16px rgba(0,0,0,0.3);      z-index: 9999;      transition: transform 0.2s, box-shadow 0.2s;      text-decoration: none;      animation: pulse 2s infinite;    }    .floating-btn-text {      font-size: 15px;      font-weight: 700;      white-space: nowrap;    }    .floating-btn:hover {      transform: scale(1.05);      box-shadow: 0 6px 24px rgba(0,0,0,0.4);      animation: none;    }    @keyframes pulse {      0%, 100% {        box-shadow: 0 4px 16px rgba(0,0,0,0.3);      }      50% {        box-shadow: 0 4px 24px rgba(254, 229, 0, 0.6), 0 0 0 10px rgba(254, 229, 0, 0.15);      }    }  </style>
+<style>
+    .floating-btn {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      height: 56px;
+      padding: 0 24px 0 18px;
+      background: linear-gradient(135deg, #4f46e5 0%, #8b5cf6 100%);
+      border-radius: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(79, 70, 229, 0.4);
+      z-index: 9999;
+      transition: transform 0.2s, box-shadow 0.2s;
+      text-decoration: none;
+      animation: float-pulse 2.5s ease-in-out infinite;
+    }
+    .floating-btn-icon {
+      font-size: 24px;
+      font-weight: 700;
+    }
+    .floating-btn-text {
+      font-size: 15px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .floating-btn:hover {
+      transform: scale(1.08) translateY(-2px);
+      box-shadow: 0 8px 30px rgba(79, 70, 229, 0.5);
+      animation: none;
+    }
+    @keyframes float-pulse {
+      0%, 100% {
+        transform: translateY(0);
+        box-shadow: 0 4px 20px rgba(79, 70, 229, 0.4);
+      }
+      50% {
+        transform: translateY(-6px);
+        box-shadow: 0 8px 30px rgba(139, 92, 246, 0.5), 0 0 0 8px rgba(139, 92, 246, 0.1);
+      }
+    }
+    /* 로컬(127.0.0.1, localhost)에서는 숨김 */
+    .floating-btn.hidden-local {
+      display: none !important;
+    }
+  </style>
 
   <script src="/static/script.js"></script>
 </body>
